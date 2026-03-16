@@ -1,0 +1,93 @@
+#! /bin/sh
+
+me=`basename "$0"`
+AC_HOME_DIR=`dirname "$0"`
+AC_HOME_DIR=`dirname "$AC_HOME_DIR"`
+
+pr_err ()
+{
+	format="$1"
+	shift
+	printf "$me: $format\n" "$@" >&2
+}
+
+show_version ()
+{
+	echo "autoconf3 (OSN autotools2) 3.0.0"
+	echo "License GPLv3+: This is free software.  There is no warranty."
+	echo "Written by Ar Rakin <rakinar2@osndevs.org>."
+}
+
+while test $# -gt 0; do
+	case "$1" in
+		-V|--version)
+			show_version
+			exit 0
+			;;
+
+		--)
+			shift
+			break
+			;;
+
+		-*)
+			pr_err "Invalid option '%s'" "$1"
+			exit 1
+			;;
+
+		*)
+			break
+			;;
+	esac
+done
+
+if test $# -gt 0; then
+	pr_err "Invalid argument '%s'" "$1"
+	exit 1
+fi
+
+tmp=`mktemp`
+trap 'rm -f "$tmp"' EXIT INT TERM
+
+aclocal_m4_include=
+test -f aclocal.m4 && aclocal_m4_include="aclocal.m4"
+
+m4 -P -I "$AC_HOME_DIR/m4" -I "$AC_HOME_DIR/m4/autoconf" "$AC_HOME_DIR/m4/autoconf/entry.m4" $aclocal_m4_include configure.ac > "$tmp" || exit $?
+awk '
+	BEGIN {
+		for (i = 2; i < ARGC; i++)
+			files[i] = ARGV[i];
+	}
+
+	/^ *$/ && ignore == 0 {
+		next;
+	}
+
+	FILENAME == ARGV[1] {
+		ignore = 1;
+		line = $0;
+
+		while (match (line, /(AC|AS|AM)_[A-Za-z0-9_]+/)) {
+			macro = substr ($0, RSTART, RLENGTH);
+			print "configure:" FNR ": warning: " macro ": Possible use of undefined macro, not expanded" > "/dev/stderr";
+			line = substr (line, RSTART + RLENGTH);
+
+			for (key in files) {
+				file = files[key];
+				line_num = 1;
+
+				while ((getline line_src < file) > 0) {
+					if (line_src ~ macro) {
+						print file ":" line_num ": warning: Possible source of this" > "/dev/stderr";
+					}
+
+					line_num++;
+			    }
+
+				close (file);
+			}
+		}
+	}
+' "$tmp" configure.ac || exit $?
+mv "$tmp" configure || exit $?
+chmod 0755 configure || exit $?
