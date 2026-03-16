@@ -1,9 +1,13 @@
 dnl -*- autoconf -*-
 
+m4_define([_count], [0])
+
 AC_DEFUN([AC_CORE_PRINT_INIT], [
 ])
 
 AC_DEFUN([AC_MSG_CHECKING], [
+m4_define([_count], m4_incr(_count))
+m4_define([_cache_name], _count)
 as_printf "checking %s... " "$1"
 ])
 

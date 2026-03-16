@@ -1,4 +1,4 @@
-AC_DEFUN([AC_INIT], [dnl
+AC_DEFUN([AC_INIT], [m4_divert(DIVERT_HEADER)dnl
 AS_SHEBANG
 #
 # configure -- prepares '$1 $2' for build
@@ -12,6 +12,13 @@ as_pkg_url="$5"
 
 as_pkg_eff_tarname="$as_pkg_tarname"
 test -z "$as_pkg_eff_tarname" && as_pkg_eff_tarname="$as_pkg_name"
+
+PACKAGE_NAME="$as_pkg_name"
+PACKAGE_VERSION="$as_pkg_version"
+PACKAGE_FULLNAME="$as_pkg_name-$as_pkg_version"
+PACKAGE_BUGREPORT="$as_pkg_bugreport_addr"
+PACKAGE_TARNAME="$as_pkg_eff_tarname"
+PACKAGE_URL="$as_pkg_url"
 
 as_me_full="[$]0"
 as_me=`basename "[$]0"`
@@ -36,6 +43,7 @@ as_srcdir="$as_me_dir"
 as_builddir=`pwd`
 as_abs_srcdir=`as_realpath "$as_srcdir"`
 as_abs_builddir=`as_realpath "$as_builddir"`
+as_build_aux_dir="$as_srcdir"
 
 as_nl='
 '
@@ -98,6 +106,8 @@ AC_CORE_UTIL_FUNCTIONS
 
 AC_CORE_LOG_INIT
 AC_CORE_PRINT_INIT
+
+m4_divert(DIVERT_BODY)
 ])dnl
 
 AC_DEFUN([AC_CORE_UTIL_FUNCTIONS], [
@@ -122,6 +132,7 @@ as_rand ()
 as_mktemp ()
 {
     rand=`as_rand`
+    test -n "$[1]" && rand="${rand}$[1]"
     tmp="$ac_conftest_dir/tmp-$rand"
     echo "$tmp"
 }

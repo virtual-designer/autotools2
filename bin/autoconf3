@@ -4,6 +4,9 @@ me=`basename "$0"`
 AC_HOME_DIR=`dirname "$0"`
 AC_HOME_DIR=`dirname "$AC_HOME_DIR"`
 
+color=0
+test -t 1 && test -t 2 && color=1
+
 pr_err ()
 {
 	format="$1"
@@ -52,12 +55,28 @@ trap 'rm -f "$tmp"' EXIT INT TERM
 aclocal_m4_include=
 test -f aclocal.m4 && aclocal_m4_include="aclocal.m4"
 
-m4 -P -I "$AC_HOME_DIR/m4" -I "$AC_HOME_DIR/m4/autoconf" "$AC_HOME_DIR/m4/autoconf/entry.m4" $aclocal_m4_include configure.ac > "$tmp" || exit $?
-awk '
+m4 -D AC_AUTOCONF_V3=1 -P -I "$AC_HOME_DIR/m4" -I "$AC_HOME_DIR/m4/autoconf" "$AC_HOME_DIR/m4/autoconf/entry.m4" $aclocal_m4_include configure.ac > "$tmp" || exit $?
+awk -v COLOR="$color" '
 	BEGIN {
 		for (i = 2; i < ARGC; i++)
 			files[i] = ARGV[i];
+
+        MAGENTA = "\033[35m";
+        BOLD = "\033[1m";
+        WHITE = "\033[37m";
+        RESET = "\033[0m";
+        DIM = "\033[2m";
+        GREY = "\033[2m";
+
+        if (COLOR == 0) {
+            MAGENTA = BOLD = GREY = WHITE = RESET = DIM = "";
+        }
 	}
+
+    END {
+        if (warnings > 0)
+            printf BOLD "%d warning%s generated.\n" RESET, warnings, (warnings > 1 ? "s" : "") > "/dev/stderr";
+    }
 
 	/^ *$/ && ignore == 0 {
 		next;
@@ -69,19 +88,42 @@ awk '
 
 		while (match (line, /(AC|AS|AM)_[A-Za-z0-9_]+/)) {
 			macro = substr ($0, RSTART, RLENGTH);
-			print "configure:" FNR ": warning: " macro ": Possible use of undefined macro, not expanded" > "/dev/stderr";
+			print BOLD "configure:" FNR ": " RESET BOLD MAGENTA "warning: " RESET "Possible use of undefined macro '"'"'" macro "'"'"', not expanded" > "/dev/stderr";
 			line = substr (line, RSTART + RLENGTH);
+            warnings++;
 
 			for (key in files) {
 				file = files[key];
 				line_num = 1;
+                last_line_src = "";
 
 				while ((getline line_src < file) > 0) {
 					if (line_src ~ macro) {
-						print file ":" line_num ": warning: Possible source of this" > "/dev/stderr";
+						print BOLD file ":" line_num ": " RESET BOLD GREY "note: " RESET "Possible source of unexpanded macro" > "/dev/stderr";
+
+                        if (line_num > 1) {
+                            printf DIM " %4d |" RESET " %s\n", (line_num - 1), last_line_src > "/dev/stderr";
+                        }
+
+                        printf BOLD DIM " %4d |" RESET " %s\n", line_num, line_src > "/dev/stderr";
+                        line_len = length (line_src) - 1;
+                        ln_num_spaces = (log (line_num) / 2) + 4;
+
+                        for (i = 0; i < ln_num_spaces; i++) {
+                            printf " " > "/dev/stderr";
+                        }
+
+                        printf DIM "| ^" > "/dev/stderr";
+
+                        while (line_len--) {
+                            printf "~" > "/dev/stderr";
+                        }
+
+                        printf RESET "\n" > "/dev/stderr";
 					}
 
 					line_num++;
+                    last_line_src = line_src;
 			    }
 
 				close (file);

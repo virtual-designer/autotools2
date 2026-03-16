@@ -1,39 +1,50 @@
 dnl -*- autoconf -*-
 
+AC_DEFUN([_AC_FIND_PROG_TRY], [
+    AS_PUSH_VAR([IFS], [":"])
+
+    for as_path in $PATH; do
+        as_prog="$1"
+        test "${as_prog#/}" = "${as_prog}" && as_exec="$as_path/$as_prog"
+        test "${as_prog#/}" != "${as_prog}" && as_exec="$as_prog"
+
+        m4_ifelse([$2], [], [test -f "$as_exec" && test -x "$as_exec"], [$2])
+
+        if test $? -eq 0; then
+            as_prog_path="$as_exec"
+            as_prog_name="$as_prog"
+            break
+        fi
+    done
+
+    AS_POP_VAR([IFS])
+])
+
 AC_DEFUN([AC_FIND_PROG], [
     as_prog_name=""
     as_prog_path=""
 
-    AS_FOREACH([as_prog_it], [$3], [
-        if test -z "$as_prog_name"; then
-            AS_PUSH_VAR([IFS], [":"])
-
-            for as_path in $PATH; do
-                as_prog="[]as_prog_it[]"
-                as_exec="$as_path/$as_prog"
-
-                m4_ifelse([$4], [], [test -f "$as_exec" && test -x "$as_exec"], [$4])
-
-                if test $? -eq 0; then
-                    as_prog_path="$as_exec"
-                    as_prog_name="$as_prog"
-                    break
-                fi
-            done
-
-            AS_POP_VAR([IFS])
-        fi
+    AS_IF([test -n "$$2"], [
+        _AC_FIND_PROG_TRY([$$2], [$4])
     ])
 
-    if test -z "$as_prog_name"; then
+    AS_IF([test -z "$as_prog_name"], [
+        AS_FOREACH([as_prog_it], [$3], [
+            if test -z "$as_prog_name"; then
+                _AC_FIND_PROG_TRY(as_prog_it, [$4])
+            fi
+        ])
+    ])
+
+    AS_IF([test -z "$as_prog_name"], [
         AC_MSG_RESULT([none])
 
         m4_ifelse([$5], [], [:], [
             AC_MSG_ERROR([$5])
         ])
-    else
+    ], [
         AC_MSG_RESULT([$as_prog_name])
-    fi
+    ])
 
     $2="$as_prog_path"
 ])
@@ -114,5 +125,3 @@ AC_DEFUN([AC_PROG_GREP], [
         AC_FIND_PROG([grep], [GREP], [grep], [], [Unable to find grep])
     ], [])
 ])
-
-dnl TODO: Compiler checks

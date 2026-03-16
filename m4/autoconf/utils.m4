@@ -28,20 +28,41 @@ $1="[$]as_var_$1[_]m4_indir(as_mnv)"
 m4_define(as_mnv, m4_decr(m4_indir(as_mnv)))dnl
 ])dnl
 dnl
-AC_DEFUN([AS_FOREACH], [dnl
+AC_DEFUN([AS_FOREACH_INTERNAL], [dnl
 m4_define([_str], AS_SPACE_SIMPLIFY(AS_STR_TRIM($2)))dnl
 m4_define([_spcpos], [m4_index(_str, [ ])])dnl
 m4_define([_next], [dnl
-m4_define([$1], AS_STR_TRIM(m4_substr(_str, 0, _spcpos)))dnl
-m4_define([rest], [m4_substr(_str, _spcpos)])$3
-AS_FOREACH([$1], rest, [$3])])dnl
+m4_pushdef([$1], AS_STR_TRIM(m4_substr(_str, 0, _spcpos)))dnl
+m4_define([_rest], [m4_substr(_str, _spcpos)])$3
+AS_FOREACH_INTERNAL([$1], _rest, [$3])])dnl
 m4_ifelse(_spcpos, [-1], [dnl
 m4_define([$1], _str)dnl
-$3[]m4_undefine([$1])], [_next])])dnl
+$3[]m4_popdef([$1])], [_next])])dnl
+dnl
+AC_DEFUN([AS_FOREACH], [dnl
+m4_pushdef([_str], [])dnl
+m4_pushdef([_spcpos], [])dnl
+m4_pushdef([_next], [])dnl
+m4_pushdef([_rest], [])dnl
+AS_FOREACH_INTERNAL([$1], [$2], [$3])[]dnl
+m4_popdef([_str])dnl
+m4_popdef([_spcpos])dnl
+m4_popdef([_next])dnl
+m4_popdef([_rest])dnl
+])dnl
 dnl
 AC_DEFUN([AS_STR_TRIM], [dnl
 m4_patsubst(m4_patsubst([$1], [\s+$]), [^\s+])])dnl
 dnl
 AC_DEFUN([AS_SPACE_SIMPLIFY], [dnl
 m4_patsubst([$1], [\s+], [ ])])dnl
+dnl
+AC_DEFUN([AS_IF], [dnl
+if $1; then
+$2
+:
+else
+$3
+:
+fi])dnl
 dnl
