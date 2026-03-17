@@ -23,8 +23,14 @@ while test $[#] -gt 0; do
             ;;
 
 m4_divert(DIVERT_ARGS_END)
+        --enable-*|--with-*)
+            as_me_warn "Unknown option: '%s' - ignoring" "$optname"
+            shift
+            ;;
+
         -*)
-            as_me_println "Invalid option '%s'" "$optname"
+            as_me_error "Unrecognized option: '%s'" "$optname"
+            as_me_error "Try '%s --help' for more information." "$as_me_full"
             exit 1
             ;;
 

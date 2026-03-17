@@ -103,6 +103,20 @@ as_me_println ()
     printf -- "$as_me: $fmt\n" "$[@]"
 }
 
+as_me_warn ()
+{
+    fmt="$[1]"
+    shift
+    printf -- "$as_me: warning: $fmt\n" "$[@]" >&2
+}
+
+as_me_error ()
+{
+    fmt="$[1]"
+    shift
+    printf -- "$as_me: error: $fmt\n" "$[@]" >&2
+}
+
 AC_CORE_PRINT_INIT
 AC_ARG_INIT
 AC_CORE_UTIL_FUNCTIONS
