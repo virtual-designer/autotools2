@@ -19,11 +19,14 @@ AC_DEFUN([AC_PROG_CC_EXISTS], [
     AS_IF([test -z "$CC"], [
         AC_MSG_ERROR([No C compiler could be found.  Please ensure the system has a C compiler installed.])
     ])
+
+    AC_SUBST([CC])
 ])
 
 AC_DEFUN([AC_PROG_CC_WORKS], [
     AC_MSG_CHECKING([whether the C compiler works])
     tmp1=`as_mktemp ".c"`
+    tmp1=`basename "$tmp1"`
     cat > "$tmp1" <<AS_EOF
 #include <stdio.h>
 
@@ -36,9 +39,7 @@ AS_EOF_END
 
     pwd=`pwd`
     cd `dirname "$tmp1"` || exit 1
-
     src=`cat "$tmp1"`
-
     ac_log_heading "C compiler test"
     ac_log_printf "Temporary source file: %s\n" "$tmp1"
     ac_log_printf "Source file contents:\n\n%s\n\n" "$src"
@@ -49,6 +50,8 @@ AS_EOF_END
     new_contents=`ls 2>/dev/null`
     ac_log_printf "Compiler output:\n\n%s\n\n" "$out"
     ac_log_printf "Compiler exit code: $code\n"
+    rm -f "$tmp1"
+    cd "$pwd" || exit 1
 
     AS_IF([test $code -eq 0], [
         result=""
@@ -89,9 +92,6 @@ AS_EOF_END
         AC_MSG_RESULT([no])
         AC_MSG_ERROR([The C compiler cannot produce valid executables.  Please ensure your compiler works.])
     ])
-
-    rm -f "$tmp1"
-    cd "$pwd" || exit 1
 ])
 
 AC_DEFUN([AC_PROG_CC_C_O], [
@@ -156,6 +156,7 @@ AC_DEFUN([AC_PROG_CXX_EXISTS], [
 AC_DEFUN([AC_PROG_CXX_WORKS], [
     AC_MSG_CHECKING([whether the C++ compiler works])
     tmp1=`as_mktemp ".cc"`
+    tmp1=`basename "$tmp1"`
     cat > "$tmp1" <<AS_EOF
 int
 main ()
@@ -166,9 +167,7 @@ AS_EOF_END
 
     pwd=`pwd`
     cd `dirname "$tmp1"` || exit 1
-
     src=`cat "$tmp1"`
-
     ac_log_heading "C++ compiler test"
     ac_log_printf "Temporary source file: %s\n" "$tmp1"
     ac_log_printf "Source file contents:\n\n%s\n\n" "$src"
@@ -179,6 +178,8 @@ AS_EOF_END
     new_contents=`ls 2>/dev/null`
     ac_log_printf "Compiler output:\n\n%s\n\n" "$out"
     ac_log_printf "Compiler exit code: $code\n"
+    rm -f "$tmp1"
+    cd "$pwd" || exit 1
 
     AS_IF([test $code -eq 0], [
         result=""
@@ -229,9 +230,6 @@ AS_EOF_END
         AC_MSG_RESULT([no])
         AC_MSG_ERROR([The C++ compiler cannot produce valid executables.  Please ensure your compiler works.])
     ])
-
-    rm -f "$tmp1"
-    cd "$pwd" || exit 1
 ])
 
 AC_DEFUN([AC_PROG_CXX_C_O], [

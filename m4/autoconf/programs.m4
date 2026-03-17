@@ -111,6 +111,7 @@ AC_DEFUN([AC_PROG_INSTALL], [
             test "$as_rcode" = 0
         ], [
             AC_MSG_RESULT([$INSTALL $INSTALL_OPTS])
+            AC_SUBST([INSTALL], [$INSTALL $INSTALL_OPTS])
         ], [
             AC_MSG_RESULT([none])
             AC_MSG_ERROR([Unable to find a BSD-compatible install program])
@@ -121,6 +122,7 @@ AC_DEFUN([AC_PROG_INSTALL], [
 AC_DEFUN([AC_PROG_MAKE], [
     AS_MSG_CHECKING_CACHE_IFELSE([for make], [
         AC_FIND_PROG([make], [MAKE], [make gmake bmake], [], [Unable to find make], [1])
+        AC_SUBST([MAKE])
     ], [])
 ])
 
@@ -141,12 +143,14 @@ AC_DEFUN([AC_PROG_MAKE_SET], [
 AC_DEFUN([AC_PROG_AWK], [
     AS_MSG_CHECKING_CACHE_IFELSE([for awk], [
         AC_FIND_PROG([awk], [AWK], [gawk awk mawk], [], [Unable to find awk], [1])
+        AC_SUBST([AWK])
     ], [])
 ])
 
 AC_DEFUN([AC_PROG_GREP], [
     AS_MSG_CHECKING_CACHE_IFELSE([for grep], [
         AC_FIND_PROG([grep], [GREP], [grep], [], [Unable to find grep], [1])
+        AC_SUBST([GREP])
     ], [])
 ])
 

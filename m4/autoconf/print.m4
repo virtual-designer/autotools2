@@ -3,6 +3,33 @@ dnl -*- autoconf -*-
 m4_define([_count], [0])
 
 AC_DEFUN([AC_CORE_PRINT_INIT], [
+as_printf ()
+{
+    fmt="$[1]"
+    shift
+    printf -- "$fmt" "$[@]"
+}
+
+as_me_println ()
+{
+    fmt="$[1]"
+    shift
+    printf -- "$as_me: $fmt\n" "$[@]"
+}
+
+as_me_warn ()
+{
+    fmt="$[1]"
+    shift
+    printf -- "$as_me: warning: $fmt\n" "$[@]" >&2
+}
+
+as_me_error ()
+{
+    fmt="$[1]"
+    shift
+    printf -- "$as_me: error: $fmt\n" "$[@]" >&2
+}
 ])
 
 AC_DEFUN([AC_MSG_CHECKING], [

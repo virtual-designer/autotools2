@@ -1,0 +1,58 @@
+#!/bin/sh
+
+me=`basename "$0"`
+AM_HOME_DIR=`dirname "$0"`
+AM_HOME_DIR=`dirname "$AM_HOME_DIR"`
+
+color=0
+test -t 1 && test -t 2 && color=1
+
+pr_err ()
+{
+	format="$1"
+	shift
+	printf "$me: $format\n" "$@" >&2
+}
+
+show_version ()
+{
+	echo "aclocal2 (OSN autotools2) 3.0.0"
+	echo "License GPLv3+: This is free software.  There is no warranty."
+	echo "Written by Ar Rakin <rakinar2@osndevs.org>."
+}
+
+while test $# -gt 0; do
+	case "$1" in
+		-V|--version)
+			show_version
+			exit 0
+			;;
+
+		--)
+			shift
+			break
+			;;
+
+		-*)
+			pr_err "Invalid option '%s'" "$1"
+			exit 1
+			;;
+
+		*)
+			break
+			;;
+	esac
+done
+
+if test $# -gt 0; then
+	pr_err "Invalid argument '%s'" "$1"
+	exit 1
+fi
+
+echo "" > "aclocal.m4"
+
+for file in "${AM_HOME_DIR}/m4/automake/"*; do
+    cat "$file" >> "aclocal.m4"
+    echo "" >> "aclocal.m4"
+    echo "" >> "aclocal.m4"
+done
