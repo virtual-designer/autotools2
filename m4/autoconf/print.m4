@@ -22,13 +22,13 @@ fi
 
 AC_DEFUN([AS_MSG_CHECKING_CACHE], [
 AC_MSG_CHECKING([$1])
-m4_define([_cache_name], m4_patsubst(m4_patsubst([$1], [[-$(\)]+], [_]), [\s+], [_]))
+m4_define([_cache_name], m4_patsubst(m4_patsubst([$1], [[-$(\)\+\#\%]+], [_]), [\s+], [_]))
 as_check_name="[]_cache_name[]"
 ])
 
 AC_DEFUN([AS_MSG_CHECKING_CACHE_IFELSE], [
 AC_MSG_CHECKING([$1])
-m4_define([_cache_name], m4_patsubst(m4_patsubst([$1], [[-$(\)]+], [_]), [\s+], [_]))
+m4_define([_cache_name], m4_patsubst(m4_patsubst([$1], [[-$(\)\+\#\%]+], [_]), [\s+], [_]))
 as_check_name="[]_cache_name[]"
 if test -z "$as_cache_[]_cache_name"; then
     :
@@ -40,11 +40,17 @@ fi
 ])
 
 AC_DEFUN([AC_MSG_ERROR], [
+ac_log_heading "Error occurred"
+ac_log_printf "error: %s" "$1"
+ac_log_printf "\n"
 as_me_println "error: %s" "$1" >&2
 exit 1
 ])
 
 AC_DEFUN([AC_MSG_WARN], [
+ac_log_heading "Warning emitted"
+ac_log_printf "warning: %s" "$1"
+ac_log_printf "\n"
 as_me_println "%s" "$1" >&2
 ])
 

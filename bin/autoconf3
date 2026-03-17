@@ -107,7 +107,7 @@ awk -v COLOR="$color" '
 
                         printf BOLD DIM " %4d |" RESET " %s\n", line_num, line_src > "/dev/stderr";
                         line_len = length (line_src) - 1;
-                        ln_num_spaces = (log (line_num) / 2) + 4;
+                        ln_num_spaces = line_num < 9999 ? 6 : ((log (line_num) / 2) + 2);
 
                         for (i = 0; i < ln_num_spaces; i++) {
                             printf " " > "/dev/stderr";

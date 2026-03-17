@@ -1,3 +1,4 @@
+dnl -*- autoconf *-
 AC_DEFUN([AC_INIT], [m4_divert(DIVERT_HEADER)dnl
 AS_SHEBANG
 #
@@ -102,12 +103,14 @@ as_me_println ()
     printf -- "$as_me: $fmt\n" "$[@]"
 }
 
-AC_CORE_UTIL_FUNCTIONS
-
-AC_CORE_LOG_INIT
 AC_CORE_PRINT_INIT
+AC_ARG_INIT
+AC_CORE_UTIL_FUNCTIONS
+AC_CORE_LOG_INIT
 
 m4_divert(DIVERT_BODY)
+
+AC_CORE_RUN_CHECKS
 ])dnl
 
 AC_DEFUN([AC_CORE_UTIL_FUNCTIONS], [
@@ -126,7 +129,7 @@ as_cleanup_cb_add as_temp_cleanup
 
 as_rand ()
 {
-    od -An -N2 -tu2 /dev/urandom | cut -c 2-
+    od -An -N2 -tu2 /dev/urandom | tr -d '[[:space:]]'
 }
 
 as_mktemp ()
@@ -137,3 +140,9 @@ as_mktemp ()
     echo "$tmp"
 }
 ])
+
+AC_DEFUN([AC_CORE_RUN_CHECKS], [
+    AC_ENSURE_POSIX
+])
+
+AC_DEFUN([AC_CONFIG_AUX_DIR], [as_build_aux_dir=$1])

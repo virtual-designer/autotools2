@@ -66,3 +66,7 @@ $3
 :
 fi])dnl
 dnl
+AC_DEFUN([AS_REPEAT], [m4_ifelse($1, 0, [], [AS_REPEAT(m4_decr($1), [$2])])[$2]])dnl
+dnl
+AC_DEFUN([AS_SHELL_VAR_ESCAPE], [m4_patsubst([$1], [[-$(\)\+\#\%]+], [_])])dnl
+dnl
