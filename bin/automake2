@@ -132,7 +132,6 @@ my $is_err = false;
 sub traverse
 {
     my ($wd) = @_;
-
     pr_msg ("Entering directory: $wd");
 
     my ($warnings, $errors, $next_dirs, $success, $errmsg) = gen_template ($wd, $input_file, $output_file, \@am_files);
@@ -143,11 +142,11 @@ sub traverse
     }
 
     foreach my $warning (@$warnings) {
-        print_warning (@{$warning}[3], @{$warning}[2], ($wd eq "." ? "" : "$wd/") . "$input_file", @{$warning}[0] . ":" . @{$warning}[1], @{$warning}[4]);
+        print_warning (@{$warning}[4], @{$warning}[3], @{$warning}[2], @{$warning}[0] . ":" . @{$warning}[1], @{$warning}[5]);
     }
 
     foreach my $error (@$errors) {
-        print_error (@{$error}[3], @{$error}[2], ($wd eq "." ? "" : "$wd/") . "$input_file", @{$error}[0] . ":" . @{$error}[1], @{$error}[4]);
+        print_error (@{$error}[4], @{$error}[3], @{$error}[2], @{$error}[0] . ":" . @{$error}[1], @{$error}[5]);
     }
 
     foreach my $subdir_data (@$next_dirs) {

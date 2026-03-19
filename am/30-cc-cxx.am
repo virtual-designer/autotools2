@@ -1,0 +1,16 @@
+.SUFFIXES: .c .cc .cpp .cxx .o
+
+.c.o:
+	$(AM_V_CC) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c $< -o $@
+
+.cc.o:
+	$(AM_V_CXX) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CXXFLAGS) -c $< -o $@
+
+.cpp.o:
+	$(AM_V_CXX) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CXXFLAGS) -c $< -o $@
+
+.cxx.o:
+	$(AM_V_CXX) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CXXFLAGS) -c $< -o $@
+
+.o:
+	$(AM_V_CCLD) $(AM_LDFLAGS) $(LDFLAGS) -o $@ $< $(LDADD) $(LDLIBS) $(LIBS)

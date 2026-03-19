@@ -19,13 +19,8 @@ BEGIN {
                   tolower(OUTFILE_BASE) == "gnumakefile" ||
                   tolower(OUTFILE_BASE) ~ /\.(am|mk|makefile)$/;
 
-    if (is_makefile) {
-        for (name in vars) {
-            print name " = " vars[name];
-        }
-    }
-
     cond_count = 0;
+    begin = 1;
 }
 
 /^#\+\$if / {
@@ -61,6 +56,22 @@ BEGIN {
 }
 
 cond_count == 0 || substr(cond_stack[cond_count], 1, 1) == "1" {
+    if ($0 ~ /^#/) {
+        print;
+        next;
+    }
+    else if (begin || !is_makefile) {
+        begin = 0;
+        print "";
+
+        if (is_makefile) {
+            for (name in vars) {
+                print name " = " vars[name];
+            }
+        }
+    }
+
+
     for (name in vars) {
         sub("@" name "@", vars[name], $0);
 

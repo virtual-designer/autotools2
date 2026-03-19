@@ -29,10 +29,23 @@ sub gen_template
     my ($wd, $input_am_base, $output_in_base, $am_files) = @_;
     my $input_am = "$wd/$input_am_base";
     my $output_in = "$wd/$output_in_base";
+
+    $input_am =~ s/^\.\/+//g;
+    $output_in =~ s/^\.\/+//g;
+
     my @buffers;
     my $next_dirs = [];
     my $warnings = [];
     my $errors = [];
+    my %context = (
+        warnings => $warnings,
+        errors => $errors,
+        buffers => \@buffers,
+        next_dirs => $next_dirs,
+        input_am_base => $input_am_base,
+        sysdirs => {},
+        program_vars => {},
+    );
 
     for (my $i = 0; $i < MAX_BUF_COUNT; $i++) {
         $buffers[$i] = "";
@@ -40,6 +53,7 @@ sub gen_template
 
     my @am_files_first;
     my @am_files_last;
+    my @am_files_all;
 
     foreach my $am_file (@{$am_files}) {
         my $name = basename ($am_file);
@@ -54,54 +68,37 @@ sub gen_template
         }
     }
 
-    foreach my $am_file (@am_files_first) {
+    push @am_files_all, @am_files_first;
+    push @am_files_all, $input_am;
+    push @am_files_all, @am_files_last;
+
+    foreach my $am_file (@am_files_all) {
         my $am_fh;
 
         if (!open ($am_fh, '<', $am_file)) {
             return ($warnings, $errors, $next_dirs, false, "$am_file: $!");
         }
 
-        my $contents = do { local $/; <$am_fh>; };
-        $buffers[BUF_PREP] .= $contents . "\n";
+        my $ln_num = 1;
+        my $last3lines = [];
+
+        while (my $line = <$am_fh>) {
+            chomp ($line);
+
+            if (scalar (@$last3lines) >= 3) {
+                shift (@$last3lines);
+            }
+
+            push @$last3lines, $line;
+            my @last3lines_copy = @$last3lines;
+
+            process_line ($ln_num++, $line, $am_file, \@last3lines_copy, \%context);
+        }
+
         close ($am_fh);
     }
 
-    my $input_fh;
-
-    if (!open ($input_fh, '<', $input_am)) {
-        return ($warnings, $errors, $next_dirs, false, "$input_am: $!");
-    }
-
-    my $ln_num = 1;
-    my $last3lines = [];
-
-    while (my $line = <$input_fh>) {
-        chomp ($line);
-
-        if (scalar (@$last3lines) >= 3) {
-            shift (@$last3lines);
-        }
-
-        push @$last3lines, $line;
-        my @last3lines_copy = @$last3lines;
-
-        process_line ($ln_num++, $line, \@buffers, $next_dirs, $input_am_base,
-                      $warnings, $errors, \@last3lines_copy);
-    }
-
-    close ($input_fh);
-
-    foreach my $am_file (@am_files_last) {
-        my $am_fh;
-
-        if (!open ($am_fh, '<', $am_file)) {
-            return ($warnings, $errors, $next_dirs, false, "$am_file: $!");
-        }
-
-        my $contents = do { local $/; <$am_fh>; };
-        $buffers[BUF_FINAL] .= $contents . "\n";
-        close ($am_fh);
-    }
+    finalize ($input_am, \%context);
 
     my $output_fh;
 
@@ -123,9 +120,14 @@ sub gen_template
 
 sub process_line
 {
-    my ($ln_num, $line, $buffers_ref, $next_dirs,
-        $input_am_base, $warnings, $errors, $last3lines) = @_;
+    my ($ln_num, $line, $input_am, $last3lines, $context) = @_;
     my $orig_line = $line;
+    my $main_input_am_base = %$context{input_am_base};
+    my $buffers_ref = %$context{buffers};
+    my $next_dirs = %$context{next_dirs};
+    my $warnings = %$context{warnings};
+    my $errors = %$context{errors};
+
     $line =~ s/^\s+|\s+$//g;
 
     if ($line =~ /^all-local:/) {
@@ -136,22 +138,89 @@ sub process_line
         @{$buffers_ref}[BUF_USER] .= "clean-am: clean-local\n";
         @{$buffers_ref}[BUF_USER] .= ".PHONY: clean-local\n";
     }
-    elsif ($line =~ /^SUBDIRS *=/) {
+    elsif ($line =~ /^SUBDIRS[ \t]*=/) {
         my $subdirs = $line;
-        $subdirs =~ s/^SUBDIRS *= *//g;
+        $subdirs =~ s/^SUBDIRS[ \t]*= *//g;
         my @dirlist = split (/\s+/, $subdirs);
 
         foreach my $subdir (@dirlist) {
-            if (-f "$subdir/$input_am_base") {
+            if (-f "$subdir/$main_input_am_base") {
                 push @$next_dirs, [$ln_num, 1, $subdir];
                 next;
             }
 
-            push @$warnings, [$ln_num, 1, D_WARN_SUBDIR, "Subdirectory '$subdir' does not exist or does not contain a $input_am_base", $last3lines];
+            push @$warnings, [$ln_num, 1, $input_am, D_WARN_SUBDIR,
+                              "Subdirectory '$subdir' does not exist or does not contain a $main_input_am_base",
+                              $last3lines];
         }
+    }
+    elsif ($line =~ /^([a-z0-9]+)dir[ \t]*=[ \t]*(.*)/) {
+        my $dirname = $1;
+        my $path = $2;
+        my $dirs = %$context{sysdirs};
+        $dirs->{$dirname} = $path;
+    }
+    elsif ($line =~ /^([a-z0-9]+)_PROGRAMS[ \t]*=[ \t]*(.*)$/) {
+        my $dirs = $context->{sysdirs};
+
+        if (!exists $dirs->{$1}) {
+            push @$warnings, [$ln_num, 1, $input_am, D_WARN_UNDEFINED_SYSDIR,
+                              "${1}dir is not defined", $last3lines];
+        }
+
+        $context->{program_vars}->{$1} = (exists $context->{program_vars}->{$1} ? $context->{program_vars}->{$1} : "") . $2;
+    }
+    elsif ($line =~ /^([a-zA-Z0-9-_]+)_SOURCES[ \t]*=/) {
+        my $program = $1;
+
+        @{$buffers_ref}[BUF_USER] .= $orig_line . "\n";
+        @{$buffers_ref}[BUF_USER] .= "${program}_OBJECTS0 = \$(${program}_SOURCES:.c=.o)\n";
+        @{$buffers_ref}[BUF_USER] .= "${program}_OBJECTS1 = \$(${program}_OBJECTS0:.cxx=.o)\n";
+        @{$buffers_ref}[BUF_USER] .= "${program}_OBJECTS2 = \$(${program}_OBJECTS1:.cpp=.o)\n";
+        @{$buffers_ref}[BUF_USER] .= "${program}_OBJECTS = \$(${program}_OBJECTS2:.cc=.o)\n\n";
+
+        return;
     }
 
     @{$buffers_ref}[BUF_USER] .= $orig_line . "\n";
+}
+
+sub finalize
+{
+    my ($am_file, $context) = @_;
+    my $buffers = %$context{buffers};
+    @$buffers[BUF_END] .= "all-am: ";
+
+    foreach my $program_var (keys %{%$context{program_vars}}) {
+        @$buffers[BUF_END] .= "\$(${program_var}_PROGRAMS)";
+
+        my $programs = %{%$context{program_vars}}{$program_var};
+        my @programs_list = split (/\s+/, $programs);
+
+        foreach my $program (@programs_list) {
+            @{$buffers}[BUF_USER] .= "${program}: \$(${program}_OBJECTS)\n";
+            @{$buffers}[BUF_USER] .= "\t\$(AM_V_CCLD) \$(AM_LDFLAGS) \$(LDFLAGS) \$(${program}_LDFLAGS) -o \$@ \$(${program}_OBJECTS) \$(${program}_LDADD) \$(LDADD) \$(LDLIBS) \$(LIBS)\n\n";
+            @{$buffers}[BUF_USER] .= "am_v_rm_prog_${program}_0 = \@echo \"  RM      ${program}\";\n";
+            @{$buffers}[BUF_USER] .= "am_v_rm_prog_${program}_1 = \n";
+
+            @{$buffers}[BUF_USER] .= "#+\$if _AM_SILENT_RULES\n";
+            @{$buffers}[BUF_USER] .= "am_v_rm_prog_${program}_ = \$(am_v_rm_prog_${program}_0)\n";
+            @{$buffers}[BUF_USER] .= "#+\$endif\n";
+
+            @{$buffers}[BUF_USER] .= "#+\$if ! _AM_SILENT_RULES\n";
+            @{$buffers}[BUF_USER] .= "am_v_rm_prog_${program}_ = \$(am_v_rm_prog_${program}_1)\n";
+            @{$buffers}[BUF_USER] .= "#+\$endif\n";
+
+            @{$buffers}[BUF_USER] .= "AM_V_RM_PROG_${program} = \$(am_v_rm_prog_${program}_\$(V))\$(RM)\n\n";
+
+            @{$buffers}[BUF_USER] .= "clean-am: clean-${program}\n\n";
+
+            @{$buffers}[BUF_USER] .= "clean-${program}:\n";
+            @{$buffers}[BUF_USER] .= "\t\$(AM_V_RM_PROG_${program}) ${program} \$(${program}_OBJECTS) && \$(RM) -r ${program}.dSYM\n\n";
+        }
+    }
+
+    @$buffers[BUF_END] .= "\n";
 }
 
 1;

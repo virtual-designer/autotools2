@@ -11,6 +11,7 @@ use constant {
 	D_WARN_SUBDIR => "invalid-subdir",
 	D_WARN_PROCFAILED => "procfailed",
 	D_WARN_EXTRA_TOKENS => "extra-tokens",
+    D_WARN_UNDEFINED_SYSDIR => "undefined-sysdir",
 };
 
 use Exporter 'import';
@@ -26,6 +27,7 @@ our @EXPORT = qw(
 	D_WARN_SUBDIR
 	D_WARN_PROCFAILED
 	D_WARN_EXTRA_TOKENS
+    D_WARN_UNDEFINED_SYSDIR
 
 	%WERROR_WARNINGS
 	@VALID_WARNINGS
@@ -42,6 +44,7 @@ our @VALID_WARNINGS = (
     D_WARN_SUBDIR,
     D_WARN_PROCFAILED,
     D_WARN_EXTRA_TOKENS,
+    D_WARN_UNDEFINED_SYSDIR
 );
 
 our %ENABLED_WARNINGS = map { $_ => true } @VALID_WARNINGS;
@@ -77,7 +80,8 @@ sub is_warning_enabled
 sub highlight
 {
 	my ($line) = @_;
-	$line =~ s/(if|else|endif)/$BLUE$BOLD$1$RESET/g;
+	$line =~ s/^(\s*)(if|else|endif)/$1$BLUE$BOLD$2$RESET/g;
+    $line =~ s/^(\s*)([a-zA-Z0-9_]+)([ \t]*)(=)/$1$YELLOW$2$RESET$3$YELLOW$4$RESET/g;
 	$line =~ s/(\s+[@\-\+])/$YELLOW$1$RESET/g;
 	$line =~ s/((\$[\(\{])([A-Za-z0-9\-_:=~]+)([\)\}]))/$BLUE$2$RESET$GRAY$3$BLUE$4$RESET/g;
 	return $line;
