@@ -16,7 +16,7 @@ pr_err ()
 
 show_version ()
 {
-	echo "autoconf3 (OSN autotools2) 3.0.0"
+	echo "autoconf (OSN autotools2) 3.0.0"
 	echo "License GPLv3+: This is free software.  There is no warranty."
 	echo "Written by Ar Rakin <rakinar2@osndevs.org>."
 }
@@ -88,6 +88,7 @@ awk -v COLOR="$color" '
 
 		while (match (line, /(AC|AS|AM)_[A-Za-z0-9_]+/)) {
 			macro = substr ($0, RSTART, RLENGTH);
+            gsub (/^\s+|\s+$/, "", macro);
 			print BOLD "configure:" FNR ": " RESET BOLD MAGENTA "warning: " RESET "Possible use of undefined macro '"'"'" macro "'"'"', not expanded" > "/dev/stderr";
 			line = substr (line, RSTART + RLENGTH);
             warnings++;

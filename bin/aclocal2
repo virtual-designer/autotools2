@@ -16,7 +16,7 @@ pr_err ()
 
 show_version ()
 {
-	echo "aclocal2 (OSN autotools2) 3.0.0"
+	echo "aclocal (OSN autotools2) 2.0.0"
 	echo "License GPLv3+: This is free software.  There is no warranty."
 	echo "Written by Ar Rakin <rakinar2@osndevs.org>."
 }

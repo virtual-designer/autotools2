@@ -61,10 +61,10 @@ AC_DEFUN([AC_FIND_PROG_IFELSE], [
 AC_DEFUN([AC_RUN_PROG], [
     ac_log_heading "Running program: $1 $2"
     ac_log_printf "Command: $1 $2\n"
-    ac_log_printf "Output:\n\n"
+    ac_log_printf "Output:\n----------------------\n"
     $1 $2 >> AC_CORE_LOG_FILE 2>&1
     as_rcode=$?
-    ac_log_printf "\n"
+    ac_log_printf "\n----------------------\n"
     ac_log_printf "Exit code: %d\n" "$as_rcode"
 
     if test "$as_rcode" = 0; then
@@ -121,8 +121,7 @@ AC_DEFUN([AC_PROG_INSTALL], [
 
 AC_DEFUN([AC_PROG_MAKE], [
     AS_MSG_CHECKING_CACHE_IFELSE([for make], [
-        AC_FIND_PROG([make], [MAKE], [make gmake bmake], [], [Unable to find make], [1])
-        AC_SUBST([MAKE])
+        AC_FIND_PROG([make], [MAKE], [make gmake bmake pmake], [], [Unable to find make], [1])
     ], [])
 ])
 

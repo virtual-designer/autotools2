@@ -21,6 +21,7 @@ AC_DEFUN([AC_PROG_CC_EXISTS], [
     ])
 
     AC_SUBST([CC])
+    AC_SUBST([CFLAGS], [])
 ])
 
 AC_DEFUN([AC_PROG_CC_WORKS], [
@@ -42,13 +43,13 @@ AS_EOF_END
     src=`cat "$tmp1"`
     ac_log_heading "C compiler test"
     ac_log_printf "Temporary source file: %s\n" "$tmp1"
-    ac_log_printf "Source file contents:\n\n%s\n\n" "$src"
+    ac_log_printf "Source file contents:\n----------------------\n%s\n----------------------\n" "$src"
     ac_log_printf "Compile command: %s\n" "$CC \"$tmp1\""
     contents=`ls 2>/dev/null`
     out=`$CC "$tmp1" 2>&1`
     code=$?
     new_contents=`ls 2>/dev/null`
-    ac_log_printf "Compiler output:\n\n%s\n\n" "$out"
+    ac_log_printf "Compiler output:\n----------------------\n%s\n----------------------\n" "$out"
     ac_log_printf "Compiler exit code: $code\n"
     rm -f "$tmp1"
     cd "$pwd" || exit 1
@@ -78,7 +79,7 @@ AS_EOF_END
     AS_IF([test $code -eq 0], [
         out=`./"$result" 2>&1`
         code=$?
-        ac_log_printf "Program output:\n\n%s\n\n" "$out"
+        ac_log_printf "Program output:\n----------------------\n%s\n----------------------\n" "$out"
         ac_log_printf "Program exit code: $code\n\n"
         rm -f "$result"
     ])
@@ -109,12 +110,12 @@ AS_EOF_END
     ac_log_heading "C compiler option -c and -o test"
     ac_log_printf "Temporary source file: %s\n" "$tmp1"
     ac_log_printf "Temporary object file: %s\n" "$tmp2"
-    ac_log_printf "Source file contents:\n\n%s\n\n" "$src"
+    ac_log_printf "Source file contents:\n----------------------\n%s\n----------------------\n" "$src"
     ac_log_printf "Compile command: %s\n" "$CC -c \"$tmp1\" -o \"$tmp2\""
     out=`$CC -c "$tmp1" -o "$tmp2" 2>&1 && test -f "$tmp2"`
     code=$?
     rm -f "$tmp1" "$tmp2"
-    ac_log_printf "Compiler output:\n\n%s\n\n" "$out"
+    ac_log_printf "Compiler output:\n----------------------\n%s\n----------------------\n" "$out"
     ac_log_printf "Compiler exit code: $code\n"
 
     AS_IF([test $code -eq 0], [
@@ -151,6 +152,9 @@ AC_DEFUN([AC_PROG_CXX_EXISTS], [
     AS_IF([test -z "$CXX"], [
         AC_MSG_ERROR([No C++ compiler could be found.  Please ensure the system has a C++ compiler installed.])
     ])
+
+    AC_SUBST([CXX])
+    AC_SUBST([CXXFLAGS], [])
 ])
 
 AC_DEFUN([AC_PROG_CXX_WORKS], [
@@ -170,13 +174,13 @@ AS_EOF_END
     src=`cat "$tmp1"`
     ac_log_heading "C++ compiler test"
     ac_log_printf "Temporary source file: %s\n" "$tmp1"
-    ac_log_printf "Source file contents:\n\n%s\n\n" "$src"
+    ac_log_printf "Source file contents:\n----------------------\n%s\n----------------------\n" "$src"
     ac_log_printf "Compile command: %s\n" "$CXX \"$tmp1\""
     contents=`ls 2>/dev/null`
     out=`$CXX "$tmp1" 2>&1`
     code=$?
     new_contents=`ls 2>/dev/null`
-    ac_log_printf "Compiler output:\n\n%s\n\n" "$out"
+    ac_log_printf "Compiler output:\n----------------------\n%s\n----------------------\n" "$out"
     ac_log_printf "Compiler exit code: $code\n"
     rm -f "$tmp1"
     cd "$pwd" || exit 1
@@ -216,7 +220,7 @@ AS_EOF_END
     AS_IF([test $code -eq 0], [
         out=`./"$result" 2>&1`
         code=$?
-        ac_log_printf "Program output:\n\n%s\n\n" "$out"
+        ac_log_printf "Program output:\n----------------------\n%s\n----------------------\n" "$out"
         ac_log_printf "Program exit code: $code\n\n"
         rm -f "$result"
     ])
@@ -249,12 +253,12 @@ AS_EOF_END
     ac_log_heading "C++ compiler option -c and -o test"
     ac_log_printf "Temporary source file: %s\n" "$tmp1"
     ac_log_printf "Temporary object file: %s\n" "$tmp2"
-    ac_log_printf "Source file contents:\n\n%s\n\n" "$src"
+    ac_log_printf "Source file contents:\n----------------------\n%s\n----------------------\n" "$src"
     ac_log_printf "Compile command: %s\n" "$CXX -c \"$tmp1\" -o \"$tmp2\""
     out=`$CXX -c "$tmp1" -o "$tmp2" 2>&1 && test -f "$tmp2"`
     code=$?
     rm -f "$tmp1" "$tmp2"
-    ac_log_printf "Compiler output:\n\n%s\n\n" "$out"
+    ac_log_printf "Compiler output:\n----------------------\n%s\n----------------------\n" "$out"
     ac_log_printf "Compiler exit code: $code\n"
 
     AS_IF([test $code -eq 0], [
@@ -269,4 +273,61 @@ AC_DEFUN([AC_PROG_CXX], [
     AC_PROG_CXX_EXISTS
     AC_PROG_CXX_WORKS
     AC_PROG_CXX_C_O
+])
+
+dnl *****************
+dnl C preprocessor checks
+dnl *****************
+AC_DEFUN([AC_PROG_CPP], [
+    done=0
+
+    AS_MSG_CHECKING_CACHE_IFELSE([how to run the C preprocessor], [
+        tmp1=`as_mktemp .c`
+        cat > "$tmp1" <<AS_EOF
+#include <stdio.h>
+
+int
+main ()
+{
+    printf ("Test");
+    return 0;
+}
+AS_EOF_END
+        AS_FOREACH([_cpp_it], ["$CC" cpp], [
+            AS_IF([test -z "$CPP" || test $done -eq 0], [
+                AC_FIND_PROG_IFELSE([cpp], [CPP], _cpp_it, [
+                    valid=0
+
+                    AS_IF([test -f "$as_exec" && test -x "$as_exec"], [
+                        cpp_flags=""
+
+                        case _cpp_it in
+                            "$CC")
+                                cpp_flags=-E
+                                ;;
+
+                            cpp)
+                                ;;
+                        esac
+
+                        AC_RUN_PROG([$as_exec], [$cpp_flags $tmp1], [
+                            valid=1
+                        ], [])
+                    ], [false])
+
+                    test $valid -eq 1
+                ], [done=1], [])
+            ])
+        ])
+
+        AS_IF([test -z "$CPP"], [
+            AC_MSG_ERROR([No C preprocessor could be found.  Please ensure the system has a C preprocessor installed.])
+        ])
+
+        CPP="$as_exec $cpp_flags"
+        AC_MSG_RESULT([$CPP])
+    ])
+
+    AC_SUBST([CPP])
+    AC_SUBST([CPPFLAGS], [])
 ])

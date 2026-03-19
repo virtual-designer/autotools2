@@ -1,3 +1,8 @@
+function basename(path) {
+    n = split(path, components, /\/+/);
+    return components[n];
+}
+
 BEGIN {
     n = split(SUBST_BUF, lines, /\n/);
 
@@ -8,10 +13,11 @@ BEGIN {
         vars[name] = value;
     }
 
-    is_makefile = tolower(OUTFILE) == "makefile" ||
-                  tolower(OUTFILE) ~ /^(makefile|gnumakefile)\./ ||
-                  tolower(OUTFILE) == "gnumakefile" ||
-                  tolower(OUTFILE) ~ /\.(am|mk|makefile)$/;
+    OUTFILE_BASE = basename(OUTFILE);
+    is_makefile = tolower(OUTFILE_BASE) == "makefile" ||
+                  tolower(OUTFILE_BASE) ~ /^(makefile|gnumakefile)\./ ||
+                  tolower(OUTFILE_BASE) == "gnumakefile" ||
+                  tolower(OUTFILE_BASE) ~ /\.(am|mk|makefile)$/;
 
     if (is_makefile) {
         for (name in vars) {

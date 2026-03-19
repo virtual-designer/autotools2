@@ -1,0 +1,6 @@
+dnl -*- autoconf -*-
+
+AC_DEFUN([AM_INIT_AUTOMAKE], [
+    AUTOMAKE_OPTIONS=""
+    AC_SUBST([AUTOMAKE_OPTIONS])
+])
