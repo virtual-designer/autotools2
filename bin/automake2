@@ -5,6 +5,7 @@ use warnings;
 use strict;
 
 use File::Basename;
+use Cwd qw(realpath);
 
 use constant {
     AM_HOME_DIR => dirname(dirname($0)),
@@ -120,11 +121,11 @@ my $pwd = ".";
 my $root_pwd = ".";
 
 if ($chdir) {
-    $pwd = File::Spec->realpath ($chdir);
+    $pwd = realpath ($chdir);
 }
 
 if ($project_root) {
-    $root_pwd = $project_root;
+    $root_pwd = realpath ($project_root);
 }
 
 my @am_files = glob (AM_HOME_DIR . "/am/*");

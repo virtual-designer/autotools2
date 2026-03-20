@@ -12,6 +12,7 @@ use constant {
 	D_WARN_PROCFAILED => "procfailed",
 	D_WARN_EXTRA_TOKENS => "extra-tokens",
     D_WARN_UNDEFINED_SYSDIR => "undefined-sysdir",
+    D_ERR_INVALID_NESTING => "invalid-nesting",
 };
 
 use Exporter 'import';
@@ -28,6 +29,7 @@ our @EXPORT = qw(
 	D_WARN_PROCFAILED
 	D_WARN_EXTRA_TOKENS
     D_WARN_UNDEFINED_SYSDIR
+    D_ERR_INVALID_NESTING
 
 	%WERROR_WARNINGS
 	@VALID_WARNINGS
@@ -119,12 +121,12 @@ sub print_warning
 {
 	my ($message, $flag, $file, $loc, $lines) = @_;
 
-	if ($flag && $WERROR_WARNINGS{$flag}) {
-		print_error ($message, $flag, $file, $loc, $lines);
+	if ($flag && !is_warning_enabled ($flag)) {
 		return;
 	}
 
-	if ($flag && !is_warning_enabled ($flag)) {
+	if ($flag && $WERROR_WARNINGS{$flag}) {
+		print_error ($message, $flag, $file, $loc, $lines);
 		return;
 	}
 
@@ -136,12 +138,9 @@ sub print_warning
 sub print_error
 {
 	my ($message, $flag, $file, $loc, $lines) = @_;
-
-	if ($flag && !is_warning_enabled ($flag)) {
-		return;
-	}
-
-	printf STDERR "${BOLD}${WHITE}%s:%s: ${BOLD}${RED}error:${RESET} %s " . ($flag ne "" ? "[${BOLD}${RED}-Werror=%s${RESET}]" : "%0s") . "\n", $file, $loc, $message, $flag;
+	printf STDERR "${BOLD}${WHITE}%s:%s: ${BOLD}${RED}error:${RESET} %s " . ($flag ne "" ? "[${BOLD}${RED}"
+                                                                             . ($flag && is_warning_enabled ($flag) ? "-Werror=" : "")
+                                                                             . "%s${RESET}]" : "%0s") . "\n", $file, $loc, $message, $flag;
 	print_source ($loc, "${BOLD}${RED}", $lines);
 	$DIAG_ERROR_COUNT++;
 }

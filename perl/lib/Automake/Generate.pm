@@ -48,6 +48,7 @@ sub gen_template
         program_vars => {},
         wd => $wd,
         root_wd => $root_wd,
+        cond_stack => [],
     );
 
     for (my $i = 0; $i < MAX_BUF_COUNT; $i++) {
@@ -77,15 +78,18 @@ sub gen_template
     push @am_files_all, $input_am;
     push @am_files_all, @am_files_last;
 
+    my $ln_num;
+    my $last3lines;
+
     foreach my $am_file (@am_files_all) {
+        $ln_num = 1;
+        $last3lines = [];
+
         my $am_fh;
 
         if (!open ($am_fh, '<', $am_file)) {
             return ($warnings, $errors, $next_dirs, false, "$am_file: $!");
         }
-
-        my $ln_num = 1;
-        my $last3lines = [];
 
         while (my $line = <$am_fh>) {
             chomp ($line);
@@ -103,7 +107,12 @@ sub gen_template
         close ($am_fh);
     }
 
-    finalize ($input_am, \%context);
+    if (scalar (@$last3lines) >= 3) {
+        shift (@$last3lines);
+    }
+
+    push @$last3lines, "";
+    finalize ($input_am, $ln_num, $last3lines, \%context);
 
     my $output_fh;
 
@@ -133,6 +142,7 @@ sub process_line
     my $next_dirs = %$context{next_dirs};
     my $warnings = %$context{warnings};
     my $errors = %$context{errors};
+    my $cond_stack = %$context{cond_stack};
 
     $line =~ s/^\s+|\s+$//g;
 
@@ -191,6 +201,53 @@ sub process_line
 
         return;
     }
+    elsif ($line =~ /^if[ \t]+([A-Za-z0-9_]+)/) {
+        my $cond = $1;
+        push @$cond_stack, $cond;
+        @{$buffers_ref}[BUF_USER] .= "#+\$if $cond\n";
+        return;
+    }
+    elsif ($line =~ /^elif[ \t]+([A-Za-z0-9_]+)/) {
+        my $cond = $1;
+
+        if (scalar (@$cond_stack) == 0) {
+            push @$errors, [$ln_num, 1, $input_am, D_ERR_INVALID_NESTING,
+                            "Invalid nesting of if-directives",
+                            $last3lines];
+            return;
+        }
+
+        pop @$cond_stack;
+        push @$cond_stack, $cond;
+        @{$buffers_ref}[BUF_USER] .= "#+\$endif\n";
+        @{$buffers_ref}[BUF_USER] .= "#+\$if $cond\n";
+        return;
+    }
+    elsif ($line =~ /^else[ \t]*$/) {
+        if (scalar (@$cond_stack) == 0) {
+            push @$errors, [$ln_num, 1, $input_am, D_ERR_INVALID_NESTING,
+                            "Invalid nesting of if-directives",
+                            $last3lines];
+            return;
+        }
+
+        my $cond = @$cond_stack[scalar (@$cond_stack) - 1];
+        @{$buffers_ref}[BUF_USER] .= "#+\$endif\n";
+        @{$buffers_ref}[BUF_USER] .= "#+\$if ! $cond\n";
+        return;
+    }
+    elsif ($line =~ /^endif[ \t]*$/) {
+        if (scalar (@$cond_stack) == 0) {
+            push @$errors, [$ln_num, 1, $input_am, D_ERR_INVALID_NESTING,
+                            "Invalid nesting of if-directives",
+                            $last3lines];
+            return;
+        }
+
+        pop @$cond_stack;
+        @{$buffers_ref}[BUF_USER] .= "#+\$endif\n";
+        return;
+    }
 
     @{$buffers_ref}[BUF_USER] .= $orig_line . "\n";
 }
@@ -216,12 +273,21 @@ sub prepare
 
 sub finalize
 {
-    my ($am_file, $context) = @_;
+    my ($am_file, $ln_num, $last3lines, $context) = @_;
     my $buffers = %$context{buffers};
-    @$buffers[BUF_END] .= "all-am: ";
+    my $warnings = %$context{warnings};
+    my $errors = %$context{errors};
+    my $cond_stack = %$context{cond_stack};
+
+    if (scalar (@$cond_stack) > 0) {
+        push @$errors, [$ln_num, 1, $am_file, D_ERR_INVALID_NESTING,
+                        "Missing endif one or more directives",
+                        $last3lines];
+        return;
+    }
 
     foreach my $program_var (keys %{%$context{program_vars}}) {
-        @$buffers[BUF_END] .= "\$(${program_var}_PROGRAMS)";
+        @$buffers[BUF_END] .= "all-am: \$(${program_var}_PROGRAMS)\n";
 
         my $programs = %{%$context{program_vars}}{$program_var};
         my @programs_list = split (/\s+/, $programs);
@@ -242,11 +308,12 @@ sub finalize
 
             @{$buffers}[BUF_USER] .= "AM_V_RM_PROG_${program} = \$(am_v_rm_prog_${program}_\$(V))\$(RM)\n\n";
 
-            @{$buffers}[BUF_USER] .= "clean-am: clean-${program}\n\n";
-
+            @{$buffers}[BUF_USER] .= "${program}--am-clean: clean-${program}\n";
             @{$buffers}[BUF_USER] .= "clean-${program}:\n";
             @{$buffers}[BUF_USER] .= "\t\$(AM_V_RM_PROG_${program}) ${program} \$(${program}_OBJECTS) && \$(RM) -r ${program}.dSYM\n\n";
         }
+
+        @{$buffers}[BUF_USER] .= "clean-am: \$(${program_var}_PROGRAMS:=--am-clean)\n\n";
     }
 
     @$buffers[BUF_END] .= "\n";
