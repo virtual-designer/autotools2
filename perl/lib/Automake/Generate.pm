@@ -160,7 +160,7 @@ sub process_line
                               $last3lines];
         }
     }
-    elsif ($line =~ /^([a-z0-9]+)dir[ \t]*=[ \t]*(.*)/) {
+    elsif ($line =~ /^([a-z0-9]+)dir[ \t]*=[ \t]*(.*)$/) {
         my $dirname = $1;
         my $path = $2;
         my $dirs = %$context{sysdirs};
@@ -224,7 +224,7 @@ sub finalize
 
         foreach my $program (@programs_list) {
             @{$buffers}[BUF_USER] .= "${program}: \$(${program}_OBJECTS)\n";
-            @{$buffers}[BUF_USER] .= "\t\$(AM_V_CCLD) \$(AM_LDFLAGS) \$(LDFLAGS) \$(${program}_LDFLAGS) -o \$@ \$(${program}_OBJECTS) \$(${program}_LDADD) \$(LDADD) \$(LDLIBS) \$(LIBS)\n\n";
+            @{$buffers}[BUF_USER] .= "\t\$(AM_V_CCLD) \$(AM_LDFLAGS) \$(LDFLAGS) \$(${program}_LDFLAGS)  -o \$@ \$(${program}_OBJECTS) \$(${program}_LDADD) \$(LDADD) \$(LDLIBS) \$(LIBS)\n\n";
             @{$buffers}[BUF_USER] .= "am_v_rm_prog_${program}_0 = \@echo \"  RM      ${program}\";\n";
             @{$buffers}[BUF_USER] .= "am_v_rm_prog_${program}_1 = \n";
 
