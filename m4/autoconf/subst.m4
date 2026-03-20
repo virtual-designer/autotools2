@@ -6,7 +6,7 @@ AC_DEFUN([AC_SUBST_INIT], [
 ])
 
 AC_DEFUN([AC_SUBST_STATUS_INIT], [
-    ac_subst_buf="${ac_subst_buf}"
+    ac_subst_buf='${ac_subst_buf}'
 ])
 
 AC_DEFUN([AC_SUBST], [
@@ -46,9 +46,9 @@ AC_DEFUN([AC_SUBST_STATUS_BUFFER], [
 ])
 
 AC_DEFUN([AC_SUBST_FILE], [
-$AWK -v SUBST_BUF="$ac_subst_buf" -v OUTFILE="$2" -f - "$1" > "$2" <<'AS_EOF'
+echo "$ac_subst_buf" | $AWK -v OUTFILE="$2" '
 m4_changequote(`, &)
 m4_include(../../awk/subst.awk)
 m4_changequote([, ])
-AS_EOF_END
+' - "$1" > "$2"
 ])

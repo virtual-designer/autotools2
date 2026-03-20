@@ -4,15 +4,6 @@ function basename(path) {
 }
 
 BEGIN {
-    n = split(SUBST_BUF, lines, /\n/);
-
-    for (i = 1; i <= n; i++) {
-        eqind = index(lines[i], "=");
-        name = substr(lines[i], 1, eqind - 1);
-        value = substr(lines[i], eqind + 1);
-        vars[name] = value;
-    }
-
     OUTFILE_BASE = basename(OUTFILE);
     is_makefile = tolower(OUTFILE_BASE) == "makefile" ||
                   tolower(OUTFILE_BASE) ~ /^(makefile|gnumakefile)\./ ||
@@ -21,13 +12,25 @@ BEGIN {
 
     cond_count = 0;
     begin = 1;
+
+    if (OUTFILE == "Makefile") {
+        vars["__COND__AM_IS_TOP_BUILDDIR"] = "1";
+    }
 }
 
-/^#\+\$if / {
+FILENAME == "-" {
+    eqind = index($0, "=");
+    name = substr($0, 1, eqind - 1);
+    value = substr($0, eqind + 1);
+    vars[name] = value;
+    next;
+}
+
+FILENAME != "-" && /^#\+\$if / {
     cond = substr($0, 6);
-    gsub(/^\s+/, "", cond);
+    gsub(/^[[:space:]]+/, "", cond);
     flip = substr (cond, 1, 1) == "!";
-    gsub(/^(!)?\s+/, "", cond);
+    gsub(/^(!)?[[:space:]]+/, "", cond);
 
     cond = "__COND_" cond;
     pair[1] = cond;
@@ -47,7 +50,7 @@ BEGIN {
     next;
 }
 
-/^#\+\$endif/ {
+FILENAME != "-" && /^#\+\$endif/ {
     if (cond_count > 0) {
         cond_count--;
     }
@@ -55,7 +58,7 @@ BEGIN {
     next;
 }
 
-cond_count == 0 || substr(cond_stack[cond_count], 1, 1) == "1" {
+FILENAME != "-" && (cond_count == 0 || substr(cond_stack[cond_count], 1, 1) == "1") {
     if ($0 ~ /^#/) {
         print;
         next;
@@ -70,7 +73,6 @@ cond_count == 0 || substr(cond_stack[cond_count], 1, 1) == "1" {
             }
         }
     }
-
 
     for (name in vars) {
         sub("@" name "@", vars[name], $0);

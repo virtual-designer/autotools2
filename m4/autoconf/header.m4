@@ -28,6 +28,9 @@ as_pkg_bugreport_addr="$4"
 as_pkg_tarname="$5"
 as_pkg_url="$6"
 
+as_srcdir="$as_srcdir"
+as_builddir="$as_builddir"
+
 AS_EOF_END
 
 cat >> $1 <<'AS_EOF'
@@ -61,17 +64,109 @@ PACKAGE_URL="$as_pkg_url"
 
 as_realpath ()
 {
-    path="$[1]"
-    name=""
+    input_path="$[1]"
+    readlink=1
+    test "$input_path" = "-x" && input_path="$[2]" && readlink=0
+    command -v readlink >/dev/null 2>&1 && test $readlink -eq 1 && readlink -f "$input_path" && return
 
-    test -d "$path" || {
-        name="/"`basename "$path"`
-    }
+    old_ifs="$IFS"
+    IFS="/"
+    new_path=""
 
-    pwd=`pwd -P`
-    test $? -eq 0 || return 1
+    for c in $input_path; do
+        test "$c" = "." && continue
 
-    printf "%s%s\n" "$pwd" "$name"
+        if test "$c" = ".." && test -n "$new_path"; then
+            case "$new_path" in
+                */*)
+                    new_path=`echo "$new_path" | rev | cut -d/ -f2- | rev`
+                    ;;
+
+                *)
+                    new_path=
+                    ;;
+            esac
+
+            continue
+        fi
+
+        test -n "$new_path" && new_path="$new_path/"
+        new_path="$new_path$c"
+    done
+
+    IFS="$old_ifs"
+
+    if test -d "$new_path"; then
+        pwd=`cd "$new_path" && pwd -P`
+        echo $pwd
+        return
+    fi
+
+    dir=`dirname "$new_path"`
+    pwd=`cd "$dir" && pwd -P`
+    base=`basename "$new_path"`
+
+    echo "$pwd/$base"
+}
+
+as_rel_path ()
+{
+    target="$[1]"
+    from="$[2]"
+
+    if test "$target" = "$from"; then
+        echo "."
+        return
+    fi
+
+    target=`as_realpath "$target" | cut -c 2-`
+    from=`as_realpath "$from" | cut -c 2-`
+
+    while test -n "$target" && test -n "$from"; do
+        c1=`echo "$target" | cut -d/ -f1-1`
+        test -z "$from" && break
+        c2=`echo "$from" | cut -d/ -f1-1`
+        if test "$c1" = "$c2"; then
+            case "$target" in
+                */*)
+                    target=`echo "$target" | cut -d/ -f2-`
+                    ;;
+
+                *)
+                    target=
+                    ;;
+            esac
+
+            case "$from" in
+                */*)
+                    from=`echo "$from" | cut -d/ -f2-`
+                    ;;
+
+                *)
+                    from=
+                    ;;
+            esac
+
+            continue 
+        fi
+
+        break
+    done
+
+    f_path=""
+    old_ifs="$IFS"
+    IFS="/"
+
+    for c in $from; do
+        test -n "$f_path" && f_path="${f_path}/"
+        f_path="${f_path}.."
+    done
+
+    IFS="$old_ifs"
+    test -n "$f_path" && test -n "$target" && f_path="${f_path}/"
+    test -n "$target" && f_path="${f_path}${target}"
+
+    echo "$f_path"
 }
 
 as_me_full="[$]0"
@@ -83,6 +178,13 @@ test -z "$as_builddir" && as_builddir="."
 test -z "$as_abs_srcdir" && as_abs_srcdir=`as_realpath "$as_srcdir"`
 test -z "$as_abs_builddir" && as_abs_builddir=`as_realpath "$as_builddir"`
 test -z "$as_build_aux_dir" && as_build_aux_dir="$as_srcdir"
+
+top_srcdir=`as_rel_path "$as_abs_srcdir" "$as_abs_builddir"`
+top_builddir="$as_builddir"
+
+if test -n "$ZSH_VERSION"; then
+    setopt sh_word_split
+fi
 
 as_nl='
 '

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+cmd ()
+{
+    $@
+    code=$?
+    test $code -ne 0 && exit $code
+}
+
+test -f Makefile.am && {
+    cmd aclocal2
+    cmd automake2
+}
+
+test -f configure.ac && cmd autoconf3
+exit 0

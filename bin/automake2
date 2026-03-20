@@ -1,4 +1,4 @@
-#!/bin/perl
+#!/usr/bin/env perl
 
 use 5.006;
 use warnings;
@@ -60,6 +60,7 @@ my @options = (
     { name => "quiet", short => "q", argument => ARG_NONE },
     { name => "no-recurse", short => "n", argument => ARG_NONE },
     { name => "chdir", short => "C", argument => ARG_REQUIRED },
+    { name => "project-root", short => "R", argument => ARG_REQUIRED },
 );
 
 sub custom_opt_handler
@@ -110,19 +111,20 @@ if ($optargs_ref->{"version"}) {
     exit 0;
 }
 
-my $flag_no_recurse = $optargs_ref->{"no_recurse"};
+my $flag_no_recurse = $optargs_ref->{"no-recurse"};
 my $chdir = exists $optargs_ref->{chdir} && $optargs_ref->{chdir} ? $optargs_ref->{chdir} : "";
+my $project_root = exists $optargs_ref->{"project-root"} && $optargs_ref->{"project-root"} ? $optargs_ref->{"project-root"} : "";
 my $input_file = "Makefile.am";
 my $output_file = "Makefile.in";
 my $pwd = ".";
+my $root_pwd = ".";
 
 if ($chdir) {
-    if (!chdir ($chdir)) {
-        pr_err ("Failed to change directory to: $chdir: $!");
-        exit 1;
-    }
-
     $pwd = $chdir;
+}
+
+if ($project_root) {
+    $root_pwd = $project_root;
 }
 
 my @am_files = glob (AM_HOME_DIR . "/am/*");
@@ -131,10 +133,10 @@ my $is_err = false;
 
 sub traverse
 {
-    my ($wd) = @_;
+    my ($wd, $root_wd) = @_;
     pr_msg ("Entering directory: $wd");
 
-    my ($warnings, $errors, $next_dirs, $success, $errmsg) = gen_template ($wd, $input_file, $output_file, \@am_files);
+    my ($warnings, $errors, $next_dirs, $success, $errmsg) = gen_template ($wd, $root_wd, $input_file, $output_file, \@am_files);
 
     if (!$success) {
         pr_err ("$errmsg");
@@ -149,15 +151,17 @@ sub traverse
         print_error (@{$error}[4], @{$error}[3], @{$error}[2], @{$error}[0] . ":" . @{$error}[1], @{$error}[5]);
     }
 
-    foreach my $subdir_data (@$next_dirs) {
-        my $subdir = @{$subdir_data}[2];
-        traverse (($wd eq "." ? "" : "$wd/") . "$subdir");
+    if (!$flag_no_recurse) {
+        foreach my $subdir_data (@$next_dirs) {
+            my $subdir = @{$subdir_data}[2];
+            traverse (($wd eq "." ? "" : "$wd/") . "$subdir", $root_wd);
+        }
     }
 
     pr_msg ("Leaving directory: $wd");
 }
 
-traverse ($pwd);
+traverse ($pwd, $root_pwd);
 print_summary ();
 
 if ($is_err || $DIAG_ERROR_COUNT > 0) {

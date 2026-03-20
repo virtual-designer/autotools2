@@ -21,11 +21,20 @@ show_version ()
 	echo "Written by Ar Rakin <rakinar2@osndevs.org>."
 }
 
+cwd=""
+
 while test $# -gt 0; do
 	case "$1" in
 		-V|--version)
 			show_version
 			exit 0
+			;;
+
+		-C|--change-directory)
+			cwd="$2"
+			test -z "$cwd" && pr_err "Option '$1' requires an argument" && exit 1
+			cwd="$cwd/"
+			shift 2
 			;;
 
 		--)
@@ -53,9 +62,17 @@ tmp=`mktemp`
 trap 'rm -f "$tmp"' EXIT INT TERM
 
 aclocal_m4_include=
-test -f aclocal.m4 && aclocal_m4_include="aclocal.m4"
+test -f "${cwd}aclocal.m4" && aclocal_m4_include="${cwd}aclocal.m4"
 
-m4 -D AC_AUTOCONF_V3=1 -P -I "$AC_HOME_DIR/m4" -I "$AC_HOME_DIR/m4/autoconf" "$AC_HOME_DIR/m4/autoconf/entry.m4" $aclocal_m4_include configure.ac > "$tmp" || exit $?
+m4 \
+	-D AC_AUTOCONF_V3=1 \
+	-D AUTOCONF_PATH="$0" \
+	-P \
+	-I "$AC_HOME_DIR/m4" \
+	-I "$AC_HOME_DIR/m4/autoconf" \
+	"$AC_HOME_DIR/m4/autoconf/entry.m4" \
+	$aclocal_m4_include "${cwd}configure.ac" > "$tmp" || exit $?
+
 awk -v COLOR="$color" '
 	BEGIN {
 		for (i = 2; i < ARGC; i++)
@@ -86,9 +103,15 @@ awk -v COLOR="$color" '
 		ignore = 1;
 		line = $0;
 
-		while (match (line, /(AC|AS|AM)_[A-Za-z0-9_]+/)) {
+		while (match (line, /_?(AC|AS|AM)_[A-Za-z0-9_]+/)) {
 			macro = substr ($0, RSTART, RLENGTH);
-            gsub (/^\s+|\s+$/, "", macro);
+            gsub (/^[[:space:]]+|[[:space:]]+$/, "", macro);
+			
+			if (macro ~ /^_/) {
+				line = substr (line, RSTART + RLENGTH);
+				continue;
+			}
+
 			print BOLD "configure:" FNR ": " RESET BOLD MAGENTA "warning: " RESET "Possible use of undefined macro '"'"'" macro "'"'"', not expanded" > "/dev/stderr";
 			line = substr (line, RSTART + RLENGTH);
             warnings++;
@@ -131,6 +154,6 @@ awk -v COLOR="$color" '
 			}
 		}
 	}
-' "$tmp" configure.ac || exit $?
-mv "$tmp" configure || exit $?
-chmod 0755 configure || exit $?
+' "$tmp" "${cwd}configure.ac" || exit $?
+mv "$tmp" "${cwd}configure" || exit $?
+chmod 0755 "${cwd}configure" || exit $?

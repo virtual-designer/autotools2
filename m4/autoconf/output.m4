@@ -1,10 +1,18 @@
 dnl -*- autoconf -*-
 
 AC_DEFUN([AC_CONFIG_FILES], [
-    ac_config_files="$1"
+    ac_config_files="m4_patsubst([$1], [\s+], [ ])"
 ])
 
 AC_DEFUN([AC_OUTPUT], [
+    AS_IF([test "$top_srcdir" = "$top_builddir"], [
+        AC_SUBST([top_srcdir], ["'$(top_builddir)'"])
+    ], [
+        AC_SUBST([top_srcdir], [$top_srcdir/"'$(top_builddir)'"])
+    ])
+
+    AC_SUBST([AUTOCONF], AUTOCONF_PATH)
+
     config_status="$as_builddir/config.status"
     as_me_println "creating %s" "$config_status"
 
@@ -18,12 +26,40 @@ AC_SUBST_STATUS_BUFFER
 AS_EOF_END
 
     cat >> "$config_status" <<'AS_EOF'
+ac_config_files_to_emit=""
+
 AS_FOR([conffile], [$ac_config_files], [
-    conffile_in="${conffile}.in"
-    as_me_println "creating %s" "$conffile"
-    AC_SUBST_FILE([$conffile_in], [$conffile])
-    AS_IF([test $? -ne 0], [
-        AC_MSG_ERROR([Unable to create $conffile from $conffile_in])
+    is_in_args=0
+
+    AS_IF([test "$[#]" -eq 0], [
+        is_in_args=1
+    ], [
+        AS_FOR([arg], ["$[@]"], [
+            arg_rp=`as_realpath -x "$arg"`
+            conffile_rp=`as_realpath -x "$conffile"`
+            
+            AS_IF([test "$arg_rp" = "$conffile_rp"], [
+                is_in_args=1
+                break
+            ])
+        ])
+    ])
+
+    test "$is_in_args" -eq 0 && continue
+    test -n "$ac_config_files_to_emit" && ac_config_files_to_emit="${ac_config_files_to_emit} "
+    ac_config_files_to_emit="${ac_config_files_to_emit}${conffile}"
+])
+
+AS_IF([test -n "$ac_config_files_to_emit"], [
+    AS_FOR([conffile], [$ac_config_files_to_emit], [
+        conffile_in="${conffile}.in"
+        as_me_println "creating %s" "$conffile"
+        dirname=`dirname "$conffile"`
+        test -d "$dirname" || mkdir -p "$dirname"
+        AC_SUBST_FILE([$as_srcdir/$conffile_in], [$conffile])
+        AS_IF([test $? -ne 0], [
+            AC_MSG_ERROR([Unable to create $conffile from $conffile_in])
+        ])
     ])
 ])
 AS_EOF_END
