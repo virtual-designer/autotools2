@@ -21,10 +21,10 @@ $(top_srcdir)/configure: $(top_srcdir)/configure.ac
 	$(AM_V_AUTOCONF) -C $(top_srcdir)
 
 $(top_builddir)/config.status: $(top_srcdir)/configure
-	$(AM_V_GEN)$(SHELL) $(top_srcdir)/configure
+	$(AM_V_GEN)cd $(top_builddir) && $(SHELL) $(top_srcdir)/configure
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	$(AM_V_GEN)$(SHELL) ./config.status $(subdir)/Makefile
+	$(AM_V_GEN)cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/Makefile
 
 am_v_distclean_1 =
 am_v_distclean_0 = @echo "  DISTCLEAN $(subdir)";

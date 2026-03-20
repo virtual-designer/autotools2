@@ -23,7 +23,7 @@ while test $[#] -gt 0; do
             ;;
 
 m4_divert(DIVERT_ARGS_END)
-        --enable-*|--with-*)
+        --enable-*|--disable-*|--with-*|--without-*)
             as_me_warn "Unknown option: '%s' - ignoring" "$optname"
             shift
             ;;
@@ -60,8 +60,12 @@ General options:
                           warnings.
 m4_divert(DIVERT_HELP_ENABLE_OPTS)
 Optional features/capabilities:
+  --enable-<FEATURE>      Enable FEATURE during build.
+  --disable-<FEATURE>     Disable FEATURE during build.
 m4_divert(DIVERT_HELP_WITH_OPTS)
 Optional packages:
+  --with-<PACKAGE>=[ARG]  Include PACKAGE during build.
+  --without-<PACKAGE>     Exclude PACKAGE during build.
 m4_divert(DIVERT_HELP_END)
 Bug reports and suggestions should be sent to <$as_pkg_bugreport_addr>.
 EOF
@@ -97,12 +101,32 @@ m4_divert(DIVERT_BODY)
 
 AC_DEFUN([AC_ARG_ENABLE], [
 m4_divert(DIVERT_ARGS)
-    --enable-$1|--enable-$1=*)
+    --enable-$1|--enable-$1=*|--disable-$1|--disable-$1=*)
+        seen=1
         enableval=1
+
+        case "$optname" in
+            --disable-$1|--disable-$1=*)
+                enableval=0
+                seen=0
+                ;;
+            *)
+                ;;
+        esac
+
         shift
 
-        if test "$optname" != "--enable-$1"; then
-            optlen="m4_eval(m4_len([--enable-][$1]) + 2)"
+        if test "$optname" != "--enable-$1" && test "$optname" != "--disable-$1"; then
+            case "$optname" in
+                --enable-$1=*)
+                    optlen="m4_eval(m4_len([--enable-][$1]) + 2)"
+                    ;;
+
+                --disable-$1=*)
+                    optlen="m4_eval(m4_len([--disable-][$1]) + 2)"
+                    ;;
+            esac
+
             optval=`echo "$optname" | cut -c ${optlen}-`
             enableval="$optval"
         elif test $[#] -gt 0; then
@@ -120,7 +144,7 @@ m4_divert(DIVERT_ARGS)
 
         $3
 
-        as_opt_enable_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen=1
+        as_opt_enable_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen="$seen"
         ;;
 m4_divert(DIVERT_HELP_ENABLE_OPTS)$2[]
 m4_divert(DIVERT_ARGS_PROC)
@@ -133,12 +157,32 @@ m4_divert(DIVERT_BODY)
 
 AC_DEFUN([AC_ARG_WITH], [
 m4_divert(DIVERT_ARGS)
-    --with-$1|--with-$1=*)
+    --with-$1|--with-$1=*|--without-$1|--without-$1=*)
         withval=""
+        seen=1
+
+        case "$optname" in
+            --without-$1|--without-$1=*)
+                withval=""
+                seen=0
+                ;;
+            *)
+                ;;
+        esac
+
         shift
 
-        if test "$optname" != "--with-$1"; then
-            optlen="m4_eval(m4_len([--with-][$1]) + 2)"
+        if test "$optname" != "--with-$1" && test "$optname" != "--without-$1"; then
+            case "$optname" in
+                --with-$1=*)
+                    optlen="m4_eval(m4_len([--with-][$1]) + 2)"
+                    ;;
+
+                --without-$1=*)
+                    optlen="m4_eval(m4_len([--without-][$1]) + 2)"
+                    ;;
+            esac
+
             optval=`echo "$optname" | cut -c ${optlen}-`
             withval="$optval"
         elif test $[#] -gt 0; then
@@ -156,7 +200,7 @@ m4_divert(DIVERT_ARGS)
 
         $3
 
-        as_opt_with_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen=1
+        as_opt_with_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen="$seen"
         ;;
 m4_divert(DIVERT_HELP_WITH_OPTS)$2[]
 m4_divert(DIVERT_ARGS_PROC)
