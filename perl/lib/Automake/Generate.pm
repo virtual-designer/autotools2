@@ -144,6 +144,10 @@ sub process_line
         @{$buffers_ref}[BUF_USER] .= "clean-am: clean-local\n";
         @{$buffers_ref}[BUF_USER] .= ".PHONY: clean-local\n";
     }
+    elsif ($line =~ /^distclean-local:/) {
+        @{$buffers_ref}[BUF_USER] .= "distclean-am: distclean-local\n";
+        @{$buffers_ref}[BUF_USER] .= ".PHONY: distclean-local\n";
+    }
     elsif ($line =~ /^SUBDIRS[ \t]*=/) {
         my $subdirs = $line;
         $subdirs =~ s/^SUBDIRS[ \t]*= *//g;
@@ -225,7 +229,7 @@ sub finalize
         foreach my $program (@programs_list) {
             @{$buffers}[BUF_USER] .= "${program}: \$(${program}_OBJECTS)\n";
             @{$buffers}[BUF_USER] .= "\t\$(AM_V_CCLD) \$(AM_LDFLAGS) \$(LDFLAGS) \$(${program}_LDFLAGS)  -o \$@ \$(${program}_OBJECTS) \$(${program}_LDADD) \$(LDADD) \$(LDLIBS) \$(LIBS)\n\n";
-            @{$buffers}[BUF_USER] .= "am_v_rm_prog_${program}_0 = \@echo \"  RM      ${program}\";\n";
+            @{$buffers}[BUF_USER] .= "am_v_rm_prog_${program}_0 = \@echo \"  RM       ${program}\";\n";
             @{$buffers}[BUF_USER] .= "am_v_rm_prog_${program}_1 = \n";
 
             @{$buffers}[BUF_USER] .= "#+\$if _AM_SILENT_RULES\n";

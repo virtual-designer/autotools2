@@ -64,7 +64,9 @@ trap 'rm -f "$tmp"' EXIT INT TERM
 aclocal_m4_include=
 test -f "${cwd}aclocal.m4" && aclocal_m4_include="${cwd}aclocal.m4"
 
-m4 \
+: ${M4:=m4}
+
+$M4 \
 	-D AC_AUTOCONF_V3=1 \
 	-D AUTOCONF_PATH="$0" \
 	-P \
@@ -106,7 +108,7 @@ awk -v COLOR="$color" '
 		while (match (line, /_?(AC|AS|AM)_[A-Za-z0-9_]+/)) {
 			macro = substr ($0, RSTART, RLENGTH);
             gsub (/^[[:space:]]+|[[:space:]]+$/, "", macro);
-			
+
 			if (macro ~ /^_/) {
 				line = substr (line, RSTART + RLENGTH);
 				continue;

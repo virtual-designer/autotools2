@@ -8,7 +8,8 @@ AC_DEFUN([AC_OUTPUT], [
     AS_IF([test "$top_srcdir" = "$top_builddir"], [
         AC_SUBST([top_srcdir], ["'$(top_builddir)'"])
     ], [
-        AC_SUBST([top_srcdir], [$top_srcdir/"'$(top_builddir)'"])
+        top_srcdir=`as_realpath "$top_srcdir"`
+        AC_SUBST([top_srcdir], [$top_srcdir])
     ])
 
     AC_SUBST([AUTOCONF], AUTOCONF_PATH)
@@ -37,7 +38,7 @@ AS_FOR([conffile], [$ac_config_files], [
         AS_FOR([arg], ["$[@]"], [
             arg_rp=`as_realpath -x "$arg"`
             conffile_rp=`as_realpath -x "$conffile"`
-            
+
             AS_IF([test "$arg_rp" = "$conffile_rp"], [
                 is_in_args=1
                 break

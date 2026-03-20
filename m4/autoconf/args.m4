@@ -68,11 +68,30 @@ EOF
 }
 
 m4_divert(DIVERT_ARGS_END)
+
 for pair in "$[@]"; do
-    varname=`echo "$pair" | cut -d= -f1`
-    varval=`echo "$pair" | cut -d= -f2-`
-dnl TODO: Implement [AC_SUBST]
+    varname=`printf '%s' "$pair" | cut -d= -f1`
+    varval=`printf '%s' "$pair" | cut -d= -f2-`
+    varname_tr=`printf '%s' "$varname" | tr -d '[A-Za-z_][A-Za-z0-9_]+'`
+
+    if test -n "$varname_tr"; then
+        as_me_error "Invalid variable name: '%s'" "$varname"
+        exit 1
+    fi
+
+    case "$varname" in
+        ac_*|as_*|am_*)
+            as_me_error "Invalid variable name: '%s'" "$varname"
+            exit 1
+            ;;
+
+        *)
+            ;;
+    esac
+
+    eval -- "${varname}='${varval}'"
 done
+
 m4_divert(DIVERT_BODY)
 ])
 

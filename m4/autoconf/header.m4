@@ -9,9 +9,9 @@ as_pkg_tarname="$4"
 as_pkg_url="$5"
 
 AC_PREINIT
-AC_ARG_INIT
 AC_CORE_PRINT_INIT
 AC_CORE_UTIL_FUNCTIONS
+AC_ARG_INIT
 AC_CORE_LOG_INIT
 
 m4_divert(DIVERT_BODY)
@@ -147,7 +147,7 @@ as_rel_path ()
                     ;;
             esac
 
-            continue 
+            continue
         fi
 
         break
