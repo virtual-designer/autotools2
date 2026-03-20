@@ -46,6 +46,7 @@ sub gen_template
         input_am_base => $input_am_base,
         sysdirs => {},
         program_vars => {},
+        lib_vars => {},
         wd => $wd,
         root_wd => $root_wd,
         cond_stack => [],
@@ -90,6 +91,8 @@ sub gen_template
         if (!open ($am_fh, '<', $am_file)) {
             return ($warnings, $errors, $next_dirs, false, "$am_file: $!");
         }
+
+        # TODO: Ensure backslashes at the end of lines are handled
 
         while (my $line = <$am_fh>) {
             chomp ($line);
@@ -190,6 +193,17 @@ sub process_line
 
         $context->{program_vars}->{$1} = (exists $context->{program_vars}->{$1} ? $context->{program_vars}->{$1} : "") . $2;
     }
+
+    elsif ($line =~ /^([a-z0-9]+)_LIBRARIES[ \t]*=[ \t]*(.*)$/) {
+        my $dirs = $context->{sysdirs};
+
+        if (!exists $dirs->{$1}) {
+            push @$warnings, [$ln_num, 1, $input_am, D_WARN_UNDEFINED_SYSDIR,
+                              "${1}dir is not defined", $last3lines];
+        }
+
+        $context->{lib_vars}->{$1} = (exists $context->{lib_vars}->{$1} ? $context->{lib_vars}->{$1} : "") . $2;
+    }
     elsif ($line =~ /^([a-zA-Z0-9-_]+)_SOURCES[ \t]*=/) {
         my $program = $1;
 
@@ -219,8 +233,10 @@ sub process_line
 
         pop @$cond_stack;
         push @$cond_stack, $cond;
+
         @{$buffers_ref}[BUF_USER] .= "#+\$endif\n";
         @{$buffers_ref}[BUF_USER] .= "#+\$if $cond\n";
+
         return;
     }
     elsif ($line =~ /^else[ \t]*$/) {
@@ -286,34 +302,66 @@ sub finalize
         return;
     }
 
+    sub cleanup
+    {
+        my ($name_raw, $name, $context) = @_;
+        my $buffers = %$context{buffers};
+
+        @{$buffers}[BUF_USER] .= "am_v_rm_e_${name}_0 = \@echo \"  RM       ${name_raw}\";\n";
+        @{$buffers}[BUF_USER] .= "am_v_rm_e_${name}_1 = \n";
+
+        @{$buffers}[BUF_USER] .= "#+\$if _AM_SILENT_RULES\n";
+        @{$buffers}[BUF_USER] .= "am_v_rm_e_${name}_ = \$(am_v_rm_e_${name}_0)\n";
+        @{$buffers}[BUF_USER] .= "#+\$endif\n";
+
+        @{$buffers}[BUF_USER] .= "#+\$if ! _AM_SILENT_RULES\n";
+        @{$buffers}[BUF_USER] .= "am_v_rm_e_${name}_ = \$(am_v_rm_e_${name}_1)\n";
+        @{$buffers}[BUF_USER] .= "#+\$endif\n";
+
+        @{$buffers}[BUF_USER] .= "AM_V_RM_E_${name} = \$(am_v_rm_e_${name}_\$(V))\$(RM)\n\n";
+
+        @{$buffers}[BUF_USER] .= "${name_raw}--am-clean: clean-${name}\n";
+        @{$buffers}[BUF_USER] .= "clean-${name}:\n";
+        @{$buffers}[BUF_USER] .= "\t\$(AM_V_RM_E_${name}) ${name_raw} \$(${name}_OBJECTS) && \$(RM) -r ${name}.dSYM\n\n";
+    }
+
     foreach my $program_var (keys %{%$context{program_vars}}) {
         @$buffers[BUF_END] .= "all-am: \$(${program_var}_PROGRAMS)\n";
 
         my $programs = %{%$context{program_vars}}{$program_var};
         my @programs_list = split (/\s+/, $programs);
 
-        foreach my $program (@programs_list) {
-            @{$buffers}[BUF_USER] .= "${program}: \$(${program}_OBJECTS)\n";
+        foreach my $program_raw (@programs_list) {
+            my $program = $program_raw;
+            $program =~ s/[\.-\/]/_/g;
+
+            @{$buffers}[BUF_USER] .= "${program_raw}: \$(${program}_OBJECTS)\n";
             @{$buffers}[BUF_USER] .= "\t\$(AM_V_CCLD) \$(AM_LDFLAGS) \$(LDFLAGS) \$(${program}_LDFLAGS)  -o \$@ \$(${program}_OBJECTS) \$(${program}_LDADD) \$(LDADD) \$(LDLIBS) \$(LIBS)\n\n";
-            @{$buffers}[BUF_USER] .= "am_v_rm_prog_${program}_0 = \@echo \"  RM       ${program}\";\n";
-            @{$buffers}[BUF_USER] .= "am_v_rm_prog_${program}_1 = \n";
 
-            @{$buffers}[BUF_USER] .= "#+\$if _AM_SILENT_RULES\n";
-            @{$buffers}[BUF_USER] .= "am_v_rm_prog_${program}_ = \$(am_v_rm_prog_${program}_0)\n";
-            @{$buffers}[BUF_USER] .= "#+\$endif\n";
-
-            @{$buffers}[BUF_USER] .= "#+\$if ! _AM_SILENT_RULES\n";
-            @{$buffers}[BUF_USER] .= "am_v_rm_prog_${program}_ = \$(am_v_rm_prog_${program}_1)\n";
-            @{$buffers}[BUF_USER] .= "#+\$endif\n";
-
-            @{$buffers}[BUF_USER] .= "AM_V_RM_PROG_${program} = \$(am_v_rm_prog_${program}_\$(V))\$(RM)\n\n";
-
-            @{$buffers}[BUF_USER] .= "${program}--am-clean: clean-${program}\n";
-            @{$buffers}[BUF_USER] .= "clean-${program}:\n";
-            @{$buffers}[BUF_USER] .= "\t\$(AM_V_RM_PROG_${program}) ${program} \$(${program}_OBJECTS) && \$(RM) -r ${program}.dSYM\n\n";
+            cleanup ($program_raw, $program, $context);
         }
 
         @{$buffers}[BUF_USER] .= "clean-am: \$(${program_var}_PROGRAMS:=--am-clean)\n\n";
+    }
+
+    foreach my $lib_var (keys %{%$context{lib_vars}}) {
+        @$buffers[BUF_END] .= "all-am: \$(${lib_var}_LIBRARIES)\n";
+
+        my $libs = %{%$context{lib_vars}}{$lib_var};
+        my @libs_list = split (/\s+/, $libs);
+
+        foreach my $lib_raw (@libs_list) {
+            my $lib = $lib_raw;
+            $lib =~ s/[\.-\/]/_/g;
+
+            @{$buffers}[BUF_USER] .= "${lib_raw}: \$(${lib}_OBJECTS)\n";
+            @{$buffers}[BUF_USER] .= "\t\$(AM_V_AR) \$(AM_ARFLAGS) \$(ARFLAGS) \$(${lib}_ARFLAGS) rcs \$@ \$(${lib}_OBJECTS) \$(${lib}_LIBADD) \$(LIBADD) \$(LIBS)\n\n";
+
+            cleanup ($lib_raw, $lib, $context);
+        }
+
+        @{$buffers}[BUF_USER] .= "clean-am: \$(${lib_var}_PROGRAMS:=--am-clean)\n\n";
+        @{$buffers}[BUF_USER] .= "clean-am: \$(${lib_var}_LIBRARIES:=--am-clean)\n\n";
     }
 
     @$buffers[BUF_END] .= "\n";
