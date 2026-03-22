@@ -50,6 +50,8 @@ sub gen_template
         wd => $wd,
         root_wd => $root_wd,
         cond_stack => [],
+        am_options => "",
+        var_index => 0,
     );
 
     for (my $i = 0; $i < MAX_BUF_COUNT; $i++) {
@@ -149,6 +151,31 @@ sub process_line
 
     $line =~ s/^\s+|\s+$//g;
 
+    my $print_line = $orig_line;
+
+    while ($line =~ /\$\(([A-Za-z_][A-Za-z0-9_]+)\:(([^=]*\|)+[^=]*)+=([^=]*)\)/) {
+        my $varname = $1;
+        my @exts = split (/\|/, $2);
+        my $replace = $4;
+        my $str = "";
+
+        foreach my $ext (@exts) {
+            my $var_index = ++$context->{var_index};
+            $str .= "${varname}_${var_index} = \$(${varname}" . ($var_index - 1 <= 0 ? "" : ("_" . ($var_index - 1))) . ":${ext}=${replace})\n";
+        }
+
+        if ($buffers_ref->[BUF_USER]) {
+            $buffers_ref->[BUF_USER] =~ s/([^\s:]+:)(?!.*[^\s:]+:)/$str\n$1/sm;
+        }
+        else {
+            $buffers_ref->[BUF_USER] .= $str;
+        }
+
+        my $var_index = $context->{var_index}++;
+        $line =~ s/\$\(([A-Za-z_][A-Za-z0-9_]+)\:(([^=]*\|)+[^=]*)+=([^=]*)\)/\$(${varname}_${var_index})/;
+        $print_line =~ s/\$\(([A-Za-z_][A-Za-z0-9_]+)\:(([^=]*\|)+[^=]*)+=([^=]*)\)/\$(${varname}_${var_index})/;
+    }
+
     if ($line =~ /^all-local:/) {
         @{$buffers_ref}[BUF_USER] .= "all-am: all-local\n";
         @{$buffers_ref}[BUF_USER] .= ".PHONY: all-local\n";
@@ -160,6 +187,10 @@ sub process_line
     elsif ($line =~ /^distclean-local:/) {
         @{$buffers_ref}[BUF_USER] .= "distclean-am: distclean-local\n";
         @{$buffers_ref}[BUF_USER] .= ".PHONY: distclean-local\n";
+    }
+    elsif ($line =~ /^AUTOMAKE_OPTIONS[ \t]*=[ \t]*(.*)$/) {
+        $context->{am_options} .= " $1 ";
+        return;
     }
     elsif ($line =~ /^SUBDIRS[ \t]*=/) {
         my $subdirs = $line;
@@ -207,7 +238,7 @@ sub process_line
     elsif ($line =~ /^([a-zA-Z0-9-_]+)_SOURCES[ \t]*=/) {
         my $program = $1;
 
-        @{$buffers_ref}[BUF_USER] .= $orig_line . "\n";
+        @{$buffers_ref}[BUF_USER] .= $line . "\n";
         @{$buffers_ref}[BUF_USER] .= "${program}_OBJECTS0 = \$(${program}_SOURCES:.c=.o)\n";
         @{$buffers_ref}[BUF_USER] .= "${program}_OBJECTS1 = \$(${program}_OBJECTS0:.cxx=.o)\n";
         @{$buffers_ref}[BUF_USER] .= "${program}_OBJECTS2 = \$(${program}_OBJECTS1:.cpp=.o)\n";
@@ -265,7 +296,7 @@ sub process_line
         return;
     }
 
-    @{$buffers_ref}[BUF_USER] .= $orig_line . "\n";
+    @{$buffers_ref}[BUF_USER] .= $print_line . "\n";
 }
 
 sub prepare
@@ -301,6 +332,8 @@ sub finalize
                         $last3lines];
         return;
     }
+
+    @{$buffers}[BUF_USER] .= "AUTOMAKE_OPTIONS = \$(AUTOMAKE_OPTIONS_ADD) " . $context->{am_options} . "\n";
 
     sub cleanup
     {

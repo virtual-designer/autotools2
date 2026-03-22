@@ -124,6 +124,8 @@ AS_EOF_END
         AC_MSG_RESULT([no])
         CC="${as_build_aux_dir}/compile $CC"
     ])
+
+    AC_REQUIRE_AUX_FILE([compile])
 ])
 
 AC_DEFUN([AC_PROG_CC], [

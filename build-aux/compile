@@ -1,0 +1,134 @@
+#!/bin/sh
+#
+# compile -- wrapper for compilers that do not understand -c and -o together
+#
+# Copyright (C) 2025  OSN Developers.
+#
+# This is free software: there is no warranty.  You are free to redistribute
+# it under the terms of the GNU General Public License v3.0 or later.
+#
+
+scriptver=2026-03-22T11:47:00Z
+me=`basename "$0"`
+me_full="$0"
+
+pr_err ()
+{
+	format="$1"
+	shift
+	printf "$me: $format\n" "$@" >&2
+}
+
+show_version ()
+{
+	echo "compile (OSN autotools2) ${scriptver}"
+	echo "License GPLv3+: This is free software.  There is no warranty."
+	echo "Written by Ar Rakin <rakinar2@osndevs.org>."
+}
+
+usage ()
+{
+    cat <<EOF
+Wrapper for compilers that do not understand -c and -o together.
+
+Usage:
+  $0 [OPTION]... <CC> <FILE>... [-o] <OUT>
+
+Options:
+      --help         Show this help and exit.
+      --version      Show version information.
+EOF
+}
+
+outfile=""
+args=""
+cc=""
+
+while test $# -gt 0; do
+    case "$1" in
+		--version)
+            show_version
+            exit 0
+            ;;
+
+        --help)
+            usage
+            exit 0
+            ;;
+
+        -o)
+            outfile="$2"
+            test -z "$outfile" && pr_err "Option '%s' requires an argument" "$1" && exit 1
+            shift 2
+            ;;
+
+        *)
+            if test -z "$cc"; then
+                cc="$1"
+            else
+                args="$args $1"
+            fi
+
+            shift
+            ;;
+    esac
+done
+
+if test -z "$cc"; then
+    pr_err "Missing compiler argument"
+    printf "Try '%s --help' for more information.\n" "$0"
+    exit 1
+fi
+
+test -n "$outfile" && rm -f "$outfile" a.out
+
+ls1=''
+
+if test -n "$outfile" && test -n "`ls`"; then
+    for f1 in *; do
+        ls1="${ls1} ${f1}"
+    done
+fi
+
+command "$cc" $args || exit $?
+
+genfile=''
+nl='
+'
+spc=' '
+tab='	'
+
+IFS="${spc}${tab}${nl}"
+
+if test -z "$outfile"; then
+    exit 0
+fi
+
+if test -n "`ls`"; then
+    for f2 in *; do
+        is_in=0
+
+        for f1 in $ls1; do
+            if test "$f1" = "$f2"; then
+                is_in=1
+                break
+            fi
+        done
+
+        if test $is_in -eq 0; then
+            genfile="$f2"
+            break
+        fi
+    done
+fi
+
+if test -z "$genfile"; then
+    pr_err "No file was generated"
+    exit 1
+fi
+
+if test -n "$outfile"; then
+    mv -f "$genfile" "$outfile" || exit $?
+fi
+
+exit 0

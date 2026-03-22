@@ -8,8 +8,11 @@ use File::Basename;
 use Cwd qw(realpath);
 
 use constant {
-    AM_HOME_DIR => dirname(dirname($0)),
-    AM_PERL_LIB_DIR => dirname(dirname($0)) . "/perl/lib",
+    AM_HOME_DIR => dirname(dirname(realpath(__FILE__))),
+};
+
+use constant {
+    AM_PERL_LIB_DIR => AM_HOME_DIR . "/lib",
 };
 
 use lib AM_PERL_LIB_DIR;

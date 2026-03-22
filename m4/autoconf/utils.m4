@@ -91,3 +91,11 @@ AC_DEFUN([AS_WHILE], [
 dnl
 AC_DEFUN([AS_BREAK], [break $1;])dnl
 AC_DEFUN([AS_CONTINUE], [continue $1;])dnl
+AC_DEFUN([AS_NL], [
+])dnl
+m4_define([_as_last_divert_buf], [0])dnl
+AC_DEFUN([AS_DIVERT], [m4_define([_as_last_divert_buf], [$1])[]m4_divert($1)])dnl
+AC_DEFUN([AS_DIVERT_PUSH], [m4_pushdef([_as_divert_buf], _as_last_divert_buf)[]m4_pushdef([_as_divert_buf], [x])[]AS_DIVERT($1)])dnl
+AC_DEFUN([AS_DIVERT_POP], [m4_popdef([_as_divert_buf])[]AS_DIVERT(_as_divert_buf)])dnl
+AC_DEFUN([AS_DISCARD_START], [AS_DIVERT_PUSH([-1])])dnl
+AC_DEFUN([AS_DISCARD_END], [AS_DIVERT_POP])dnl

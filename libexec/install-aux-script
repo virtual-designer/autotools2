@@ -1,0 +1,119 @@
+#!/bin/sh
+
+me=`basename "$0"`
+AC_HOME_DIR=`readlink -f "$0"`
+AC_HOME_DIR=`dirname "$AC_HOME_DIR"`
+AC_HOME_DIR=`dirname "$AC_HOME_DIR"`
+
+color=0
+test -t 1 && test -t 2 && color=1
+
+pr_err ()
+{
+	format="$1"
+	shift
+	printf "$me: $format\n" "$@" >&2
+}
+
+show_version ()
+{
+	echo "install-aux-script (OSN autotools2) 1.0.0"
+	echo "License GPLv3+: This is free software.  There is no warranty."
+	echo "Written by Ar Rakin <rakinar2@osndevs.org>."
+}
+
+usage ()
+{
+    cat <<EOF
+Install auxiliary scripts.
+
+Usage:
+  $0 [OPTION]... <SCRIPT> <DESTDIR>
+
+Options:
+  -h, --help         Show this help and exit.
+  -V, --version      Show version information.
+EOF
+}
+
+ignore_if_exists=0
+flag_D=
+
+while test $# -gt 0; do
+	case "$1" in
+		-V|--version)
+			show_version
+			exit 0
+			;;
+
+        -h|--help)
+			usage
+			exit 0
+			;;
+
+        -D|--create-path)
+            flag_D=-D
+            shift
+            ;;
+
+        -i|--ignore-if-exists)
+            ignore_if_exists=1
+            shift
+            ;;
+
+		--)
+			shift
+			break
+			;;
+
+		-*)
+			pr_err "Invalid option '%s'" "$1"
+			exit 1
+			;;
+
+		*)
+			break
+			;;
+	esac
+done
+
+if test $# -lt 1; then
+	pr_err "Missing script name and destination arguments"
+	printf "Try '%s --help' for more information.\n" "$0"
+	exit 1
+fi
+
+if test $# -lt 2; then
+	pr_err "Missing destination argument"
+	printf "Try '%s --help' for more information.\n" "$0"
+	exit 1
+fi
+
+if test $# -gt 2; then
+	pr_err "Too many arguments passed"
+	printf "Try '%s --help' for more information.\n" "$0"
+	exit 1
+fi
+
+script="$1"
+dest="$2"
+
+build_aux_dir="$AC_HOME_DIR/build-aux"
+script_path="$build_aux_dir/$script"
+
+if ! test -f "$script_path" || ! test -x "$script_path"; then
+    pr_err "${script}: No script found with that name"
+    exit 1
+fi
+
+if test -f "$dest/$script"; then
+    if test "$ignore_if_exists" -eq 1; then
+        exit 0
+    fi
+
+    pr_err "${dest}/${script}: File exists"
+    exit 1
+fi
+
+install $flag_D -c -m 0755 "${script_path}" "${dest}/${script}"
+exit $?

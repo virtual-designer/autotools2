@@ -7,7 +7,7 @@ $2[]dnl
 ])
 
 AC_DEFUN([AC_ARG_INIT], [
-m4_divert(DIVERT_ARGS_START)
+AS_DIVERT(DIVERT_ARGS_START)
 while test $[#] -gt 0; do
     optname="$[1]"
 
@@ -22,7 +22,7 @@ while test $[#] -gt 0; do
             exit 0
             ;;
 
-m4_divert(DIVERT_ARGS_END)
+AS_DIVERT(DIVERT_ARGS_END)
         --enable-*|--disable-*|--with-*|--without-*)
             as_me_warn "Unknown option: '%s' - ignoring" "$optname"
             shift
@@ -39,7 +39,7 @@ m4_divert(DIVERT_ARGS_END)
             ;;
     esac
 done
-m4_divert(DIVERT_HELP_START)
+AS_DIVERT(DIVERT_HELP_START)
 [#] Print usage
 usage ()
 {
@@ -58,20 +58,20 @@ General options:
   -v, --version           Show version information.
   -q, --quiet, --silent   Do not print any message other than errors and
                           warnings.
-m4_divert(DIVERT_HELP_ENABLE_OPTS)
+AS_DIVERT(DIVERT_HELP_ENABLE_OPTS)
 Optional features/capabilities:
   --enable-<FEATURE>      Enable FEATURE during build.
   --disable-<FEATURE>     Disable FEATURE during build.
-m4_divert(DIVERT_HELP_WITH_OPTS)
+AS_DIVERT(DIVERT_HELP_WITH_OPTS)
 Optional packages:
   --with-<PACKAGE>=[ARG]  Include PACKAGE during build.
   --without-<PACKAGE>     Exclude PACKAGE during build.
-m4_divert(DIVERT_HELP_END)
+AS_DIVERT(DIVERT_HELP_END)
 Bug reports and suggestions should be sent to <$as_pkg_bugreport_addr>.
 EOF
 }
 
-m4_divert(DIVERT_ARGS_END)
+AS_DIVERT(DIVERT_ARGS_END)
 
 for pair in "$[@]"; do
     varname=`printf '%s' "$pair" | cut -d= -f1`
@@ -96,11 +96,11 @@ for pair in "$[@]"; do
     eval -- "${varname}='${varval}'"
 done
 
-m4_divert(DIVERT_BODY)
+AS_DIVERT(DIVERT_BODY)
 ])
 
 AC_DEFUN([AC_ARG_ENABLE], [
-m4_divert(DIVERT_ARGS)
+AS_DIVERT(DIVERT_ARGS)
     --enable-$1|--enable-$1=*|--disable-$1|--disable-$1=*)
         seen=1
         enableval=1
@@ -146,17 +146,17 @@ m4_divert(DIVERT_ARGS)
 
         as_opt_enable_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen="$seen"
         ;;
-m4_divert(DIVERT_HELP_ENABLE_OPTS)$2[]
-m4_divert(DIVERT_ARGS_PROC)
+AS_DIVERT(DIVERT_HELP_ENABLE_OPTS)$2[]
+AS_DIVERT(DIVERT_ARGS_PROC)
     if test "$as_opt_enable_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen" != 1; then
         $4
         :
     fi
-m4_divert(DIVERT_BODY)
+AS_DIVERT(DIVERT_BODY)
 ])
 
 AC_DEFUN([AC_ARG_WITH], [
-m4_divert(DIVERT_ARGS)
+AS_DIVERT(DIVERT_ARGS)
     --with-$1|--with-$1=*|--without-$1|--without-$1=*)
         withval=""
         seen=1
@@ -202,11 +202,11 @@ m4_divert(DIVERT_ARGS)
 
         as_opt_with_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen="$seen"
         ;;
-m4_divert(DIVERT_HELP_WITH_OPTS)$2[]
-m4_divert(DIVERT_ARGS_PROC)
+AS_DIVERT(DIVERT_HELP_WITH_OPTS)$2[]
+AS_DIVERT(DIVERT_ARGS_PROC)
     if test "$as_opt_with_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen" != 1; then
         $4
         :
     fi
-m4_divert(DIVERT_BODY)
+AS_DIVERT(DIVERT_BODY)
 ])

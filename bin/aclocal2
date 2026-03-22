@@ -1,7 +1,8 @@
 #!/bin/sh
 
 me=`basename "$0"`
-AM_HOME_DIR=`dirname "$0"`
+AM_HOME_DIR=`readlink -f "$0"`
+AM_HOME_DIR=`dirname "$AM_HOME_DIR"`
 AM_HOME_DIR=`dirname "$AM_HOME_DIR"`
 
 color=0

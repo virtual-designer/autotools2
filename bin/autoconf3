@@ -1,11 +1,20 @@
-#! /bin/sh
+#!/bin/sh
 
 me=`basename "$0"`
-AC_HOME_DIR=`dirname "$0"`
+AC_HOME_DIR=`readlink -f "$0"`
+AC_HOME_DIR=`dirname "$AC_HOME_DIR"`
 AC_HOME_DIR=`dirname "$AC_HOME_DIR"`
 
 color=0
 test -t 1 && test -t 2 && color=1
+
+BOLD=""
+RESET=""
+
+if test "$color" -eq 1; then
+    BOLD="\033[1m"
+    RESET="\033[0m"
+fi
 
 pr_err ()
 {
@@ -58,17 +67,46 @@ if test $# -gt 0; then
 	exit 1
 fi
 
+: ${M4:=m4}
+: ${TMPDIR:=/tmp}
+
+aux_install_list=`echo "mkstemp(\\\`${TMPDIR}/autoconf3tmp_XXXXXX')" | $M4`
+
+rm -f "$aux_install_list"
+mkfifo "$aux_install_list"
 tmp=`mktemp`
-trap 'rm -f "$tmp"' EXIT INT TERM
+pids=''
+
+trap 'code=$?; rm -f "$tmp" "$aux_install_list"; test -n "$pids" && kill -TERM $pids > /dev/null 2>&1; exit $code' EXIT INT TERM
+
+printf "$BOLD$me:$RESET Processing configure.ac\n"
 
 aclocal_m4_include=
 test -f "${cwd}aclocal.m4" && aclocal_m4_include="${cwd}aclocal.m4"
 
-: ${M4:=m4}
+{
+    while read -r line; do
+        file=`printf '%s\n' "$line" | cut -d'|' -f1`
+        line_num=`printf '%s\n' "$line" | cut -d'|' -f2`
+        script=`printf '%s\n' "$line" | cut -d'|' -f3-`
+
+        if test -f "$script"; then
+            continue
+        fi
+
+        printf "${BOLD}%s:%d:${RESET} Installing '%s'\n" "$file" "$line_num" "$script"
+        script_name=`basename "$script"`
+        script_dir=`dirname "$script"`
+        "${AC_HOME_DIR}/libexec/install-aux-script" -D -i "$script_name" "$script_dir"
+    done < "$aux_install_list"
+} &
+
+pids="${pids} $!"
 
 $M4 \
 	-D AC_AUTOCONF_V3=1 \
 	-D AUTOCONF_PATH="$0" \
+    -D _AC_AUX_INSTALL_LIST_PIPE="$aux_install_list" \
 	-P \
 	-I "$AC_HOME_DIR/m4" \
 	-I "$AC_HOME_DIR/m4/autoconf" \

@@ -1,6 +1,6 @@
 dnl -*- autoconf -*-
 
-AC_DEFUN([AC_INIT], [m4_divert(DIVERT_HEADER)[]dnl
+AC_DEFUN([AC_INIT], [AS_DIVERT(DIVERT_HEADER)[]dnl
 AS_SHEBANG
 as_pkg_name="$1"
 as_pkg_version="$2"
@@ -14,7 +14,7 @@ AC_CORE_UTIL_FUNCTIONS
 AC_ARG_INIT
 AC_CORE_LOG_INIT
 
-m4_divert(DIVERT_BODY)
+AS_DIVERT(DIVERT_BODY)
 AC_CORE_RUN_CHECKS
 ])
 
@@ -266,8 +266,9 @@ AC_DEFUN([AC_CORE_RUN_CHECKS], [
         AC_MSG_ERROR([Auxiliary script directory '$as_build_aux_dir' could not be found or accessed])
     ])
 
-    AC_ENSURE_POSIX
-    AC_ENSURE_SANENESS
+    AC_REQUIRE([AC_ENSURE_POSIX])
+    AC_REQUIRE([AC_ENSURE_SANENESS])
+    AC_REQUIRE([AC_PROG_AWK])
 ])
 
 AC_DEFUN([AC_ENSURE_SANENESS], [
@@ -292,5 +293,3 @@ AC_DEFUN([AC_ENSURE_SANENESS], [
         AC_MSG_ERROR([Build environment is not sane.  Please double check if the filesystem is writable and accessible.  Ensure permissions are correct.])
     ])
 ])
-
-AC_DEFUN([AC_CONFIG_AUX_DIR], [as_build_aux_dir=$1])
