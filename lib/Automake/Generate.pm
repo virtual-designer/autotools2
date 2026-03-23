@@ -176,17 +176,13 @@ sub process_line
         $print_line =~ s/\$\(([A-Za-z_][A-Za-z0-9_]+)\:(([^=]*\|)+[^=]*)+=([^=]*)\)/\$(${varname}_${var_index})/;
     }
 
-    if ($line =~ /^all-local:/) {
-        @{$buffers_ref}[BUF_USER] .= "all-am: all-local\n";
-        @{$buffers_ref}[BUF_USER] .= ".PHONY: all-local\n";
+    if ($line =~ /^(all|clean|distclean|install)-local:/) {
+        @{$buffers_ref}[BUF_USER] .= "${1}-am: ${1}-local\n";
+        @{$buffers_ref}[BUF_USER] .= ".PHONY: ${1}-local\n";
     }
-    elsif ($line =~ /^clean-local:/) {
-        @{$buffers_ref}[BUF_USER] .= "clean-am: clean-local\n";
-        @{$buffers_ref}[BUF_USER] .= ".PHONY: clean-local\n";
-    }
-    elsif ($line =~ /^distclean-local:/) {
-        @{$buffers_ref}[BUF_USER] .= "distclean-am: distclean-local\n";
-        @{$buffers_ref}[BUF_USER] .= ".PHONY: distclean-local\n";
+    elsif ($line =~ /^(all|clean|install)-([a-zA-Z0-9-_]+)-hook:/) {
+        my $target = "${2}--am-${1}";
+        @{$buffers_ref}[BUF_USER] .= "${target}: ${1}-${2}-hook\n\n";
     }
     elsif ($line =~ /^AUTOMAKE_OPTIONS[ \t]*=[ \t]*(.*)$/) {
         $context->{am_options} .= " $1 ";
@@ -359,7 +355,7 @@ sub finalize
     }
 
     foreach my $program_var (keys %{%$context{program_vars}}) {
-        @$buffers[BUF_END] .= "all-am: \$(${program_var}_PROGRAMS)\n";
+        @$buffers[BUF_END] .= "all-am: \$(${program_var}_PROGRAMS:=--am-all)\n";
 
         my $programs = %{%$context{program_vars}}{$program_var};
         my @programs_list = split (/\s+/, $programs);
@@ -368,13 +364,25 @@ sub finalize
             my $program = $program_raw;
             $program =~ s/[\.-\/]/_/g;
 
+            @{$buffers}[BUF_USER] .= "${program_raw}--am-all: ${program_raw}\n";
             @{$buffers}[BUF_USER] .= "${program_raw}: \$(${program}_OBJECTS)\n";
             @{$buffers}[BUF_USER] .= "\t\$(AM_V_CCLD) \$(AM_LDFLAGS) \$(LDFLAGS) \$(${program}_LDFLAGS)  -o \$@ \$(${program}_OBJECTS) \$(${program}_LDADD) \$(LDADD) \$(LDLIBS) \$(LIBS)\n\n";
+
+            @{$buffers}[BUF_USER] .= "${program_raw}--am-install: \$(${program_var}dir)/${program_raw}\n";
+
+            @{$buffers}[BUF_USER] .= "am_prog_${program}_name_f_1 = \$(${program_var}dir)/${program_raw}\n";
+            @{$buffers}[BUF_USER] .= "am_prog_${program}_name_f_0 = \n";
+            @{$buffers}[BUF_USER] .= "am_prog_${program}_name_f_  = \n";
+            @{$buffers}[BUF_USER] .= ".PHONY: \$(am_prog_${program}_name_f_\$(AM_F))\n\n";
+
+            @{$buffers}[BUF_USER] .= "\$(${program_var}dir)/${program_raw}: ${program_raw}\n";
+            @{$buffers}[BUF_USER] .= "\t\$(AM_V_INSTALL) -D -T -m 0755 ${program_raw} \$@\n";
 
             cleanup ($program_raw, $program, $context);
         }
 
-        @{$buffers}[BUF_USER] .= "clean-am: \$(${program_var}_PROGRAMS:=--am-clean)\n\n";
+        @{$buffers}[BUF_USER] .= "clean-am: \$(${program_var}_PROGRAMS:=--am-clean)\n";
+        @{$buffers}[BUF_USER] .= "install-am: \$(${program_var}_PROGRAMS:=--am-install)\n\n";
     }
 
     foreach my $lib_var (keys %{%$context{lib_vars}}) {
@@ -387,14 +395,25 @@ sub finalize
             my $lib = $lib_raw;
             $lib =~ s/[\.-\/]/_/g;
 
+            @{$buffers}[BUF_USER] .= "${lib_raw}--am-all: ${lib_raw}\n";
             @{$buffers}[BUF_USER] .= "${lib_raw}: \$(${lib}_OBJECTS)\n";
             @{$buffers}[BUF_USER] .= "\t\$(AM_V_AR) \$(AM_ARFLAGS) \$(ARFLAGS) \$(${lib}_ARFLAGS) rcs \$@ \$(${lib}_OBJECTS) \$(${lib}_LIBADD) \$(LIBADD) \$(LIBS)\n\n";
+
+            @{$buffers}[BUF_USER] .= "${lib_raw}--am-install: \$(${lib_var}dir)/${lib_raw}\n";
+
+            @{$buffers}[BUF_USER] .= "am_lib_${lib}_name_f_1 = \$(${lib_var}dir)/${lib_raw}\n";
+            @{$buffers}[BUF_USER] .= "am_lib_${lib}_name_f_0 = \n";
+            @{$buffers}[BUF_USER] .= "am_lib_${lib}_name_f_  = \n";
+            @{$buffers}[BUF_USER] .= ".PHONY: \$(am_lib_${lib}_name_f_\$(AM_F))\n\n";
+
+            @{$buffers}[BUF_USER] .= "\$(${lib_var}dir)/${lib_raw}: ${lib_raw}\n";
+            @{$buffers}[BUF_USER] .= "\t\$(AM_V_INSTALL) -D -T -m 0644 ${lib_raw} \$@\n";
 
             cleanup ($lib_raw, $lib, $context);
         }
 
-        @{$buffers}[BUF_USER] .= "clean-am: \$(${lib_var}_PROGRAMS:=--am-clean)\n\n";
-        @{$buffers}[BUF_USER] .= "clean-am: \$(${lib_var}_LIBRARIES:=--am-clean)\n\n";
+        @{$buffers}[BUF_USER] .= "clean-am: \$(${lib_var}_LIBRARIES:=--am-clean)\n";
+        @{$buffers}[BUF_USER] .= "install-am: \$(${lib_var}_LIBRARIES:=--am-install)\n\n";
     }
 
     @$buffers[BUF_END] .= "\n";

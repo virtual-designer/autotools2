@@ -9,6 +9,7 @@ am_v_echo_automake_1 =
 am_v_echo_autoconf_1 =
 am_v_echo_gen_1      =
 am_v_echo_ar_1       =
+am_v_echo_install_1  =
 
 am_v_echo_cc_0       = @echo "  CC       $@";
 am_v_echo_cxx_0      = @echo "  CXX      $@";
@@ -17,6 +18,7 @@ am_v_echo_automake_0 = @echo "  AUTOMAKE $@";
 am_v_echo_autoconf_0 = @echo "  AUTOCONF $@";
 am_v_echo_gen_0      = @echo "  GEN      $@";
 am_v_echo_ar_0       = @echo "  AR       $@";
+am_v_echo_install_0  = @echo "  INSTALL  $@";
 
 #+$if _AM_SILENT_RULES
 _AM_DEFAULT_V = 0
@@ -33,8 +35,10 @@ am_v_echo_automake_  = $(am_v_echo_automake_$(_AM_DEFAULT_V))
 am_v_echo_autoconf_  = $(am_v_echo_autoconf_$(_AM_DEFAULT_V))
 am_v_echo_gen_       = $(am_v_echo_gen_$(_AM_DEFAULT_V))
 am_v_echo_ar_        = $(am_v_echo_ar_$(_AM_DEFAULT_V))
+am_v_echo_install_   = $(am_v_echo_install_$(_AM_DEFAULT_V))
 
 AM_V = $(am_v_$(V))
+AM_F = $(F)
 
 AM_V_CC = $(am_v_echo_cc_$(V))$(CC)
 AM_V_CXX = $(am_v_echo_cxx_$(V))$(CXX)
@@ -43,6 +47,7 @@ AM_V_AUTOMAKE = $(am_v_echo_automake_$(V))$(AUTOMAKE)
 AM_V_AUTOCONF = $(am_v_echo_autoconf_$(V))$(AUTOCONF)
 AM_V_GEN = $(am_v_echo_gen_$(V))
 AM_V_AR = $(am_v_echo_ar_$(V))$(AR)
+AM_V_INSTALL = $(am_v_echo_install_$(V))$(INSTALL)
 
 RM = rm -f
 SHELL = /bin/sh

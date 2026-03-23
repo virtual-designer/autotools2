@@ -38,6 +38,7 @@ AC_DEFUN([AC_FIND_PROG_IFELSE], [
     as_prog_cmd=""
 
     AS_IF([test -n "$$2"], [
+        m4_define([as_prog_it], [$$2])
         _AC_FIND_PROG_TRY([$$2], [$4])
     ])
 
@@ -77,6 +78,7 @@ AC_DEFUN([AC_RUN_PROG], [
 ])
 
 AC_DEFUN([AC_PROG_INSTALL], [
+    AC_REQUIRE_AUX_FILE([install-sh])
     AS_MSG_CHECKING_CACHE_IFELSE([for a BSD-compatible install], [
         AC_FIND_PROG_IFELSE([install], [INSTALL], [install], [
             as_rcode=1
@@ -87,7 +89,7 @@ AC_DEFUN([AC_PROG_INSTALL], [
                     as_prog="$as_exec"
                     as_cmd="$as_exec"
 
-                    if test -f "$as_path/install" && test -x "$as_path/install"; then
+                    if test -f "$as_exec" && test -x "$as_exec"; then
                         as_tmp1=`as_mktemp`
                         as_tmp2=`as_mktemp`
                         echo 42 > "$as_tmp1"
@@ -114,7 +116,9 @@ AC_DEFUN([AC_PROG_INSTALL], [
             AC_SUBST([INSTALL], [$INSTALL $INSTALL_OPTS])
         ], [
             AC_MSG_RESULT([none])
-            AC_MSG_ERROR([Unable to find a BSD-compatible install program])
+            INSTALL="${as_build_aux_dir}/install-sh"
+            INSTALL_OPTS="-c"
+            AC_SUBST([INSTALL], [$INSTALL $INSTALL_OPTS])
         ])
     ], [])
 ])

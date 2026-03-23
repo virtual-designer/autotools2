@@ -130,16 +130,7 @@ AS_DIVERT(DIVERT_ARGS)
             optval=`echo "$optname" | cut -c ${optlen}-`
             enableval="$optval"
         elif test $[#] -gt 0; then
-            case "$[1]" in
-                -*)
-                    ;;
-
-                *)
-                    optval="$[1]"
-                    enableval="$optval"
-                    shift
-                    ;;
-            esac
+            enableval=1
         fi
 
         $3
@@ -186,16 +177,7 @@ AS_DIVERT(DIVERT_ARGS)
             optval=`echo "$optname" | cut -c ${optlen}-`
             withval="$optval"
         elif test $[#] -gt 0; then
-            case "$[1]" in
-                -*)
-                    ;;
-
-                *)
-                    optval="$[1]"
-                    withval="$optval"
-                    shift
-                    ;;
-            esac
+            withval=""
         fi
 
         $3
