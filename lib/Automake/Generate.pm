@@ -307,8 +307,8 @@ sub prepare
     @$buffers[BUF_INIT] .= "AUTOMAKE = $0\n\n";
     @$buffers[BUF_INIT] .= "top_builddir = $rev_rel\n";
     @$buffers[BUF_INIT] .= "subdir = $orig_rel\n";
-    @$buffers[BUF_INIT] .= "srcdir = \$(top_srcdir)$rel\n";
-    @$buffers[BUF_INIT] .= "builddir = \$(top_builddir)$rel\n";
+    @$buffers[BUF_INIT] .= "am_rel_up = " . ($rev_rel eq "." ? "" : "/$rev_rel") . "\n";
+    @$buffers[BUF_INIT] .= "am_rel_subdir = $rel\n";
     @$buffers[BUF_INIT] .= "\n";
 }
 
@@ -327,11 +327,13 @@ sub finalize
         return;
     }
 
-    @{$buffers}[BUF_USER] .= "AM_AUTOMAKE_OPTIONS = \$(AUTOMAKE_OPTIONS) \$(AUTOMAKE_OPTIONS_ADD) " . $context->{am_options} . "\n";
+    @{$buffers}[BUF_USER] .= "AM_AUTOMAKE_OPTIONS = \$(AUTOMAKE_OPTIONS) \$(AUTOMAKE_OPTIONS_ADD) " . $context->{am_options} . "\n\n";
+
+    # TODO: Use regex to create a _DIST variable for each SOURCES and HEADERS variable, before any condition
     @{$buffers}[BUF_USER] .= "AM_DIST_STATIC_FILES = " . $context->{dist_files} . "\n\n";
     @{$buffers}[BUF_USER] .= "dist-subdir-am: \$(AM_DIST_STATIC_FILES:=--am-dist)\n";
     @{$buffers}[BUF_USER] .= "\$(AM_DIST_STATIC_FILES:=--am-dist):\n";
-    @{$buffers}[BUF_USER] .= "\t\$(AM_V_DIST_CP) \$(\@:--am-dist=) \$(PACKAGE_SUBDIR)/\$(\@:--am-dist=)\n";
+    @{$buffers}[BUF_USER] .= "\t\$(AM_V_DIST_CP) \$(srcdir)/\$(\@:--am-dist=) \$(PACKAGE_SUBDIR)/\$(\@:--am-dist=)\n";
 
     sub cleanup
     {

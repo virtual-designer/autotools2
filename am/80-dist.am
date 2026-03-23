@@ -27,13 +27,9 @@ am_v_gen_tarball_version = $(am_v_gen_tarball_version_$(V))
 $(PACKAGE_DIR)/.tarball-version:
 	$(am_v_gen_tarball_version) echo $(PACKAGE_VERSION) > $@ || true
 
-$(PACKAGE_DIR)/configure: $(top_srcdir)/configure
-	$(AM_V_CP) $< $@
-
 PACKAGE_TAR_DEPS = \
 	$(PACKAGE_DIR) \
 	$(PACKAGE_DIR)/.tarball-version \
-	$(PACKAGE_DIR)/configure \
 	dist-subdir-am
 
 am_v_rm_pkg_dir_0 = @echo "  RM        $(PACKAGE_DIR)";
@@ -94,7 +90,7 @@ dist-subdir-am-recursive:
 	@for dir in $(SUBDIRS); do $(MAKE) -C $$dir dist-subdir-am; done
 
 $(AM_DIST_FILES:=--am-dist):
-	$(AM_V_DIST_CP) $(@:--am-dist=) $(PACKAGE_SUBDIR)/$(@:--am-dist=)
+	$(AM_V_DIST_CP) $(srcdir)/$(@:--am-dist=) $(PACKAGE_SUBDIR)/$(@:--am-dist=)
 
 am_v_distclean_1 =
 am_v_distclean_0 = @echo "  DISTCLEAN $(subdir)";
@@ -116,3 +112,11 @@ distclean-recursive:
 	@for dir in $(SUBDIRS); do $(MAKE) -C $$dir distclean; done
 
 .PHONY: distclean distclean-am distclean-recursive
+
+#+$if _AM_IS_TOP_BUILDDIR
+distcheck: distcheck-am
+distcheck-am: prepare-am dist-am
+	@echo Check successful [TODO]
+
+.PHONY: distcheck distcheck-am
+#+$endif

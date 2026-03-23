@@ -1,7 +1,7 @@
-AM_EXTRA_DIST = $(srcdir)/Makefile.in $(srcdir)/Makefile.am $(EXTRA_DIST)
+AM_EXTRA_DIST = Makefile.in Makefile.am $(EXTRA_DIST)
 
 #+$if _AM_IS_TOP_BUILDDIR
-AM_DIST_TOP_BUILDDIR_FILES = $(top_srcdir)/configure.ac $(AC_MACRO_FILES) $(AC_AUX_FILES)
+AM_DIST_TOP_BUILDDIR_FILES = configure configure.ac $(AC_AUX_FILES) $(AC_MACRO_FILES)
 #+$endif
 
 AM_DIST_FILES = $(AM_DIST_TOP_BUILDDIR_FILES) $(AM_EXTRA_DIST)

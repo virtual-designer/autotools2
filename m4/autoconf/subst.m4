@@ -20,7 +20,7 @@ ac_subst_$1 ()
 
 ac_subst_fns="${ac_subst_fns} ac_subst_$1"
 
-m4_ifdef([_ac_subst_]$1, [1])
+m4_define([_ac_subst_]$1, [1])
 m4_define([_ac_subst_list], m4_ifdef([_ac_subst_list], [m4_defn([_ac_subst_list])])[]m4_ifdef([_ac_subst_list], [ ])[]$1)
 ])
 

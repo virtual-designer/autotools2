@@ -9,6 +9,7 @@ as_pkg_tarname="$4"
 as_pkg_url="$5"
 
 AC_PREINIT
+AC_SUBST_INIT
 AC_CORE_PRINT_INIT
 AC_CORE_UTIL_FUNCTIONS
 AC_ARG_INIT
@@ -170,18 +171,20 @@ as_rel_path ()
 }
 
 as_me_full="[$]0"
+as_me_full_real=`as_realpath "[$]0"`
 as_me=`basename "[$]0"`
-as_me_dir=`dirname "[$]0"`
+as_me_dir=`dirname "$as_me_full_real"`
 
 test -z "$as_srcdir" && as_srcdir="$as_me_dir"
 test -z "$as_builddir" && as_builddir="."
 test -z "$as_abs_srcdir" && as_abs_srcdir=`as_realpath "$as_srcdir"`
 test -z "$as_abs_builddir" && as_abs_builddir=`as_realpath "$as_builddir"`
-test -z "$as_build_aux_dir" && as_build_aux_dir="$as_srcdir"
-test -z "$as_config_macro_dir" && as_config_macro_dir="$as_srcdir"
 
 top_srcdir=`as_rel_path "$as_abs_srcdir" "$as_abs_builddir"`
 top_builddir="$as_builddir"
+
+test -z "$as_build_aux_dir" && as_build_aux_dir="$as_srcdir"
+test -z "$as_config_macro_dir" && as_config_macro_dir="$as_srcdir"
 
 if test -n "$ZSH_VERSION"; then
     setopt sh_word_split

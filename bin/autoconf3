@@ -147,7 +147,7 @@ awk -v COLOR="$color" '
 			macro = substr ($0, RSTART, RLENGTH);
             gsub (/^[[:space:]]+|[[:space:]]+$/, "", macro);
 
-			if (macro ~ /^_/) {
+			if (macro ~ /^[[:space:]]*_/) {
 				line = substr (line, RSTART + RLENGTH);
 				continue;
 			}

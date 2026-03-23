@@ -7,11 +7,15 @@ AC_DEFUN([AC_CONFIG_FILES], [
 AC_DEFUN([AC_OUTPUT], [
     AS_IF([test "$top_srcdir" = "$top_builddir"], [
         AC_SUBST([top_srcdir], ["'$(top_builddir)'"])
+        AC_SUBST([srcdir], ["."])
     ], [
         top_srcdir=`as_realpath "$top_srcdir"`
-        AC_SUBST([top_srcdir], [$top_srcdir])
+        top_srcdir_rel=`as_rel_path "$top_srcdir" "$top_builddir"`
+        AC_SUBST([top_srcdir], [$top_srcdir_rel"'$(am_rel_up)'"])
+        AC_SUBST([srcdir], ["'$(top_srcdir)$(am_rel_subdir)'"])
     ])
 
+    AC_SUBST([builddir], ["."])
     AC_SUBST([AUTOCONF], AUTOCONF_PATH)
 
     AC_SUBST([PACKAGE], [$PACKAGE_NAME])
@@ -22,14 +26,33 @@ AC_DEFUN([AC_OUTPUT], [
     AC_SUBST([PACKAGE_TARNAME])
     AC_SUBST([PACKAGE_URL])
 
-    AC_SUBST([_AC_CONFIG_VALUE_AUX_DIR], [$as_build_aux_dir])
-    AC_SUBST([_AC_CONFIG_VALUE_MACRO_DIR], [$as_config_macro_dir])
+    _CONFIG_VALUE_AUX_DIR=`as_rel_path "$as_build_aux_dir" "$top_srcdir"`
+    _CONFIG_VALUE_MACRO_DIR=`as_rel_path "$as_config_macro_dir" "$top_srcdir"`
 
-    as_macro_files=`ls "$as_config_macro_dir"/*.m4` || {
+    if test "$_CONFIG_VALUE_AUX_DIR" = "."; then
+        _CONFIG_VALUE_AUX_DIR=""
+    else
+        _CONFIG_VALUE_AUX_DIR="${_CONFIG_VALUE_AUX_DIR}/"
+    fi
+
+    if test "$_CONFIG_VALUE_MACRO_DIR" = "."; then
+        _CONFIG_VALUE_MACRO_DIR=""
+    else
+        _CONFIG_VALUE_MACRO_DIR="${_CONFIG_VALUE_MACRO_DIR}/"
+    fi
+
+    AC_SUBST([_AC_CONFIG_VALUE_AUX_DIR], [$_CONFIG_VALUE_AUX_DIR])
+    AC_SUBST([_AC_CONFIG_VALUE_MACRO_DIR], [$_CONFIG_VALUE_MACRO_DIR])
+
+    as_macro_files=`cd "$as_config_macro_dir" && ls -1 *.m4 | xargs -n 1 printf '%s%s' "$_CONFIG_VALUE_MACRO_DIR"` || {
         AC_MSG_ERROR([Unable to read macro directory: $as_config_macro_dir])
     }
 
-    as_aux_files="AS_FOREACH([_it], [_ac_aux_files], [$as_build_aux_dir/][_it ])"
+    as_aux_files=""
+
+    for file in []_ac_aux_files[]; do
+        as_aux_files="${as_aux_files} ${_CONFIG_VALUE_AUX_DIR}${file}"
+    done
 
     AC_SUBST([_AC_CONFIG_VALUE_MACRO_FILES], [$as_macro_files])
     AC_SUBST([_AC_CONFIG_VALUE_AUX_FILES], [$as_aux_files])
