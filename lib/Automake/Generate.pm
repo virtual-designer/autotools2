@@ -50,8 +50,9 @@ sub gen_template
         wd => $wd,
         root_wd => $root_wd,
         cond_stack => [],
-        am_options => "",
+        am_options => "dist-gz",
         var_index => 0,
+        dist_files => "",
     );
 
     for (my $i = 0; $i < MAX_BUF_COUNT; $i++) {
@@ -184,10 +185,6 @@ sub process_line
         my $target = "${2}--am-${1}";
         @{$buffers_ref}[BUF_USER] .= "${target}: ${1}-${2}-hook\n\n";
     }
-    elsif ($line =~ /^AUTOMAKE_OPTIONS[ \t]*=[ \t]*(.*)$/) {
-        $context->{am_options} .= " $1 ";
-        return;
-    }
     elsif ($line =~ /^SUBDIRS[ \t]*=/) {
         my $subdirs = $line;
         $subdirs =~ s/^SUBDIRS[ \t]*= *//g;
@@ -231,7 +228,7 @@ sub process_line
 
         $context->{lib_vars}->{$1} = (exists $context->{lib_vars}->{$1} ? $context->{lib_vars}->{$1} : "") . $2;
     }
-    elsif ($line =~ /^([a-zA-Z0-9-_]+)_SOURCES[ \t]*=/) {
+    elsif ($line =~ /^([a-zA-Z0-9-_]+)_SOURCES[ \t]*=[ \t]*(.*)$/) {
         my $program = $1;
 
         @{$buffers_ref}[BUF_USER] .= $line . "\n";
@@ -240,6 +237,7 @@ sub process_line
         @{$buffers_ref}[BUF_USER] .= "${program}_OBJECTS2 = \$(${program}_OBJECTS1:.cpp=.o)\n";
         @{$buffers_ref}[BUF_USER] .= "${program}_OBJECTS = \$(${program}_OBJECTS2:.cc=.o)\n\n";
 
+        $context->{dist_files} .= " " . $2 . " ";
         return;
     }
     elsif ($line =~ /^if[ \t]+([A-Za-z0-9_]+)/) {
@@ -329,7 +327,11 @@ sub finalize
         return;
     }
 
-    @{$buffers}[BUF_USER] .= "AUTOMAKE_OPTIONS = \$(AUTOMAKE_OPTIONS_ADD) " . $context->{am_options} . "\n";
+    @{$buffers}[BUF_USER] .= "AM_AUTOMAKE_OPTIONS = \$(AUTOMAKE_OPTIONS) \$(AUTOMAKE_OPTIONS_ADD) " . $context->{am_options} . "\n";
+    @{$buffers}[BUF_USER] .= "AM_DIST_STATIC_FILES = " . $context->{dist_files} . "\n\n";
+    @{$buffers}[BUF_USER] .= "dist-subdir-am: \$(AM_DIST_STATIC_FILES:=--am-dist)\n";
+    @{$buffers}[BUF_USER] .= "\$(AM_DIST_STATIC_FILES:=--am-dist):\n";
+    @{$buffers}[BUF_USER] .= "\t\$(AM_V_DIST_CP) \$(\@:--am-dist=) \$(PACKAGE_SUBDIR)/\$(\@:--am-dist=)\n";
 
     sub cleanup
     {
@@ -376,7 +378,7 @@ sub finalize
             @{$buffers}[BUF_USER] .= ".PHONY: \$(am_prog_${program}_name_f_\$(AM_F))\n\n";
 
             @{$buffers}[BUF_USER] .= "\$(${program_var}dir)/${program_raw}: ${program_raw}\n";
-            @{$buffers}[BUF_USER] .= "\t\$(AM_V_INSTALL) -D -T -m 0755 ${program_raw} \$@\n";
+            @{$buffers}[BUF_USER] .= "\t\$(AM_V_INSTALL) -D -T -m 0755 ${program_raw} \$\@\n\n";
 
             cleanup ($program_raw, $program, $context);
         }

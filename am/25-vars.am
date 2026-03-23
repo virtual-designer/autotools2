@@ -1,0 +1,7 @@
+AM_EXTRA_DIST = $(srcdir)/Makefile.in $(srcdir)/Makefile.am $(top_srcdir)/configure.ac $(EXTRA_DIST)
+
+#+$if _AM_IS_TOP_BUILDDIR
+AM_DIST_TOP_BUILDDIR_FILES = $(AC_MACRO_FILES) $(AC_AUX_FILES)
+#+$endif
+
+AM_DIST_FILES = $(AM_DIST_TOP_BUILDDIR_FILES) $(AM_EXTRA_DIST)

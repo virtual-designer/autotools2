@@ -36,7 +36,7 @@ m4_define([_str], AS_SPACE_SIMPLIFY(AS_STR_TRIM($2)))dnl
 m4_define([_spcpos], [m4_index(_str, [ ])])dnl
 m4_define([_next], [dnl
 m4_pushdef([$1], AS_STR_TRIM(m4_substr(_str, 0, _spcpos)))dnl
-m4_define([_rest], [m4_substr(_str, _spcpos)])$3
+m4_define([_rest], [m4_substr(_str, _spcpos)])$3[]dnl
 AS_FOREACH_INTERNAL([$1], _rest, [$3])])dnl
 m4_ifelse(_spcpos, [-1], [dnl
 m4_define([$1], _str)dnl

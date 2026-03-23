@@ -1,14 +1,14 @@
 AM_TARGETS = $(srcdir)/Makefile.in $(builddir)/Makefile $(top_srcdir)/configure $(top_builddir)/config.status
 
 all: all-am
-all-am: $(AM_TARGETS) all-recursive
+all-am: prepare-am $(AM_TARGETS) all-recursive
 all-recursive:
 	@for dir in $(SUBDIRS); do $(MAKE) -C $$dir; done
 
 .PHONY: all all-am all-recursive
 
 clean: clean-am
-clean-am: $(AM_TARGETS) clean-recursive
+clean-am: prepare-am $(AM_TARGETS) clean-recursive
 clean-recursive:
 	@for dir in $(SUBDIRS); do $(MAKE) -C $$dir clean; done
 
@@ -26,28 +26,12 @@ $(top_builddir)/config.status: $(top_srcdir)/configure
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	$(AM_V_GEN)cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/Makefile
 
-am_v_distclean_1 =
-am_v_distclean_0 = @echo "  DISTCLEAN $(subdir)";
-am_v_distclean_  = $(am_v_distclean_$(_AM_DEFAULT_V))
-AM_V_DISTCLEAN   = $(am_v_distclean_$(V))
-
-distclean: distclean-am
-distclean-am: clean-am distclean-recursive
-	$(AM_V_DISTCLEAN)$(RM) -r .deps && \
-#+$if _AM_IS_TOP_BUILDDIR
-	$(RM) config.status config.log && \
-	$(RM) -r .conftests
-#+$endif
-#+$if ! _AM_IS_TOP_BUILDDIR
-	$(RM) Makefile
-#+$endif
-
-distclean-recursive:
-	@for dir in $(SUBDIRS); do $(MAKE) -C $$dir distclean; done
-
-.PHONY: distclean distclean-am distclean-recursive
-
 install: install-am
-install-am: install-recursive
+install-am: prepare-am install-recursive
 install-recursive:
 	@for dir in $(SUBDIRS); do $(MAKE) -C $$dir install; done
+
+.PHONY: install install-am install-recursive
+.PHONY: prepare-am
+
+prepare-am:

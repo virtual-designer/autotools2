@@ -1,0 +1,118 @@
+dist: dist-am
+dist-am: prepare-am $(AM_TARGETS)
+
+PACKAGE_BASE_DIR = $(PACKAGE_TARNAME)-$(PACKAGE_VERSION)
+
+#+$if _AM_IS_TOP_BUILDDIR
+PACKAGE_DIR = $(PACKAGE_BASE_DIR)
+PACKAGE_SUBDIR = $(PACKAGE_DIR)
+
+$(PACKAGE_DIR):
+	$(AM_V_MKDIR) $@
+
+am_v_gen_tarball_version_c = case "$(AM_AUTOMAKE_OPTIONS)" in \
+		*" create-tarball-version"*|*"create-tarball-version "*) \
+			cont=1; \
+		;; \
+		*) \
+			cont=0; \
+		;; \
+	esac; test $$cont -eq 1
+
+am_v_gen_tarball_version_0 = @$(am_v_gen_tarball_version_c) && echo "  GEN       $@" &&
+am_v_gen_tarball_version_1 = $(am_v_gen_tarball_version_c) &&
+am_v_gen_tarball_version_ = $(am_v_gen_tarball_version_$(_AM_DEFAULT_V))
+am_v_gen_tarball_version = $(am_v_gen_tarball_version_$(V))
+
+$(PACKAGE_DIR)/.tarball-version:
+	$(am_v_gen_tarball_version) echo $(PACKAGE_VERSION) > $@ || true
+
+$(PACKAGE_DIR)/configure: $(top_srcdir)/configure
+	$(AM_V_CP) $< $@
+
+PACKAGE_TAR_DEPS = \
+	$(PACKAGE_DIR) \
+	$(PACKAGE_DIR)/.tarball-version \
+	$(PACKAGE_DIR)/configure \
+	dist-subdir-am
+
+am_v_rm_pkg_dir_0 = @echo "  RM        $(PACKAGE_DIR)";
+am_v_rm_pkg_dir_1 =
+am_v_rm_pkg_dir_ = $(am_v_rm_pkg_dir_$(_AM_DEFAULT_V))
+am_v_rm_pkg_dir = $(am_v_rm_pkg_dir_$(V))$(RM) -r $(PACKAGE_DIR)
+
+$(PACKAGE_DIR).tar.gz: $(PACKAGE_TAR_DEPS)
+	$(AM_V_TAR_GZ) -cf $@ $(PACKAGE_DIR)
+
+$(PACKAGE_DIR).tar.xz: $(PACKAGE_TAR_DEPS)
+	$(AM_V_TAR_XZ) -cf $@ $(PACKAGE_DIR)
+
+$(PACKAGE_DIR).tar.bz2: $(PACKAGE_TAR_DEPS)
+	$(AM_V_TAR_BZ2) -cf $@ $(PACKAGE_DIR)
+
+$(PACKAGE_DIR).tar.lz4: $(PACKAGE_TAR_DEPS)
+	$(AM_V_TAR_LZ4) -cf $(@:.lz4=) $(PACKAGE_DIR) && { test -f "$@" && $(RM) "$@"; true; } && $(LZ4) $(@:.lz4=) $@ && $(RM) $(@:.lz4=)
+
+dist-gz: $(PACKAGE_DIR).tar.gz
+	$(am_v_rm_pkg_dir)
+
+dist-xz: $(PACKAGE_DIR).tar.xz
+	$(am_v_rm_pkg_dir)
+
+dist-bz2: $(PACKAGE_DIR).tar.bz2
+	$(am_v_rm_pkg_dir)
+
+dist-lz4: $(PACKAGE_DIR).tar.lz4
+	$(am_v_rm_pkg_dir)
+
+dist-am:
+	@case "$(AM_VALID_AUTOMAKE_OPTIONS)" in *" dist-gz"*|*"dist-gz "*) $(MAKE) dist-gz; ;; esac
+	@case "$(AM_VALID_AUTOMAKE_OPTIONS)" in *" dist-xz"*|*"dist-xz "*) $(MAKE) dist-xz; ;; esac
+	@case "$(AM_VALID_AUTOMAKE_OPTIONS)" in *" dist-bz2"*|*"dist-bz2 "*) $(MAKE) dist-bz2; ;; esac
+	@case "$(AM_VALID_AUTOMAKE_OPTIONS)" in *" dist-lz4"*|*"dist-lz4 "*) $(MAKE) dist-lz4; ;; esac
+
+#+$endif
+#+$if ! _AM_IS_TOP_BUILDDIR
+PACKAGE_DIR = $(top_builddir)/$(PACKAGE_BASE_DIR)
+PACKAGE_SUBDIR = $(PACKAGE_DIR)/$(subdir)
+
+$(PACKAGE_SUBDIR):
+	$(AM_V_MKDIR) $@
+
+dist-am dist-gz dist-xz dist-bz2 dist-lz4:
+	$(MAKE) -C $(top_builddir) $@
+#+$endif
+
+.PHONY: dist dist-am dist-gz dist-subdir-am dist-subdir-am-recursive
+
+dist-subdir-am: \
+	$(PACKAGE_SUBDIR) \
+	$(AM_DIST_FILES:=--am-dist) \
+	dist-subdir-am-recursive
+
+dist-subdir-am-recursive:
+	@for dir in $(SUBDIRS); do $(MAKE) -C $$dir dist-subdir-am; done
+
+$(AM_DIST_FILES:=--am-dist):
+	$(AM_V_DIST_CP) $(@:--am-dist=) $(PACKAGE_SUBDIR)/$(@:--am-dist=)
+
+am_v_distclean_1 =
+am_v_distclean_0 = @echo "  DISTCLEAN $(subdir)";
+am_v_distclean_  = $(am_v_distclean_$(_AM_DEFAULT_V))
+AM_V_DISTCLEAN   = $(am_v_distclean_$(V))
+
+distclean: distclean-am
+distclean-am: clean-am distclean-recursive
+	$(AM_V_DISTCLEAN)$(RM) -r .deps && \
+#+$if _AM_IS_TOP_BUILDDIR
+	$(RM) config.status config.log && \
+	$(RM) -r .conftests
+#+$endif
+#+$if ! _AM_IS_TOP_BUILDDIR
+	$(RM) Makefile
+#+$endif
+
+distclean-recursive:
+	@for dir in $(SUBDIRS); do $(MAKE) -C $$dir distclean; done
+
+.PHONY: distclean distclean-am distclean-recursive

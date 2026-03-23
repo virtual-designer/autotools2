@@ -14,6 +14,26 @@ AC_DEFUN([AC_OUTPUT], [
 
     AC_SUBST([AUTOCONF], AUTOCONF_PATH)
 
+    AC_SUBST([PACKAGE], [$PACKAGE_NAME])
+    AC_SUBST([PACKAGE_NAME])
+    AC_SUBST([PACKAGE_FULLNAME])
+    AC_SUBST([PACKAGE_VERSION])
+    AC_SUBST([PACKAGE_BUGREPORT])
+    AC_SUBST([PACKAGE_TARNAME])
+    AC_SUBST([PACKAGE_URL])
+
+    AC_SUBST([_AC_CONFIG_VALUE_AUX_DIR], [$as_build_aux_dir])
+    AC_SUBST([_AC_CONFIG_VALUE_MACRO_DIR], [$as_config_macro_dir])
+
+    as_macro_files=`ls "$as_config_macro_dir"/*.m4` || {
+        AC_MSG_ERROR([Unable to read macro directory: $as_config_macro_dir])
+    }
+
+    as_aux_files="AS_FOREACH([_it], [_ac_aux_files], [$as_build_aux_dir/][_it ])"
+
+    AC_SUBST([_AC_CONFIG_VALUE_MACRO_FILES], [$as_macro_files])
+    AC_SUBST([_AC_CONFIG_VALUE_AUX_FILES], [$as_aux_files])
+
     config_status="$as_builddir/config.status"
     as_me_println "creating %s" "$config_status"
 

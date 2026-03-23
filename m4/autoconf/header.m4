@@ -178,6 +178,7 @@ test -z "$as_builddir" && as_builddir="."
 test -z "$as_abs_srcdir" && as_abs_srcdir=`as_realpath "$as_srcdir"`
 test -z "$as_abs_builddir" && as_abs_builddir=`as_realpath "$as_builddir"`
 test -z "$as_build_aux_dir" && as_build_aux_dir="$as_srcdir"
+test -z "$as_config_macro_dir" && as_config_macro_dir="$as_srcdir"
 
 top_srcdir=`as_rel_path "$as_abs_srcdir" "$as_abs_builddir"`
 top_builddir="$as_builddir"
