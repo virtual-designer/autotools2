@@ -1,0 +1,247 @@
+#!/bin/sh
+#
+# install-sh -- a backup script that acts as '/usr/bin/install'
+#
+# Copyright (C) 2025  OSN Developers.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+scriptver=2026-03-23T09:50:00Z
+
+me=`basename "$0"`
+me_full="$0"
+
+pr_err ()
+{
+	format="$1"
+	shift
+	printf "$me: $format\n" "$@" >&2
+}
+
+show_version ()
+{
+	echo "install-sh (OSN autotools2) ${scriptver}"
+	echo "License GPLv3+: This is free software.  There is no warranty."
+	echo "Written by Ar Rakin <rakinar2@osndevs.org>."
+}
+
+usage ()
+{
+    cat <<EOF
+Install files when the system has no built-in install program.
+
+Usage:
+  $0 [OPTION]... <SOURCE>... <DEST>
+
+Options:
+  -h, --help                 Show this help and exit.
+  -V, --version              Show version information.
+  -c                         (ignored)
+  -T, --no-target-directory  Report error if DEST is a directory.
+  -D                         Create all required directories until basename of
+                             DEST is reached.
+  -m, --mode=MODE            Change mode of SOURCE files during installation.
+  -C, --compare              Compare contents, permissions, ownership of SOURCE
+                             and DEST files, if there is any difference, continue
+                             installation.
+EOF
+}
+
+no_dest_dir=0
+create_path=0
+compare=0
+mode=0755
+verbose=0
+
+while test $# -gt 0; do
+    case "$1" in
+		-V|--version)
+            show_version
+            exit 0
+            ;;
+
+        -h|--help)
+            usage
+            exit 0
+            ;;
+
+        -v|--verbose)
+            verbose=1
+            shift
+            ;;
+
+        -c)
+            shift
+            ;;
+
+        -T|--no-target-directory)
+            no_dest_dir=1
+            shift
+            ;;
+
+        -D)
+            create_path=1
+            shift
+            ;;
+
+        -m|--mode)
+            test -z "$2" && pr_err "Option '%s' requires an argument" "$1" && exit 1
+            mode="$2"
+
+            case "$mode" in
+                [0-7][0-7][0-7][0-7]|[0-7][0-7][0-7])
+                    ;;
+
+                *)
+                    pr_err "Invalid mode: %s" "$mode"
+                    exit 1
+                    ;;
+            esac
+
+            shift 2
+            ;;
+
+        -C|--compare)
+            compare=1
+            shift
+            ;;
+
+        --)
+            shift
+            break
+            ;;
+
+        -*)
+            pr_err "Invalid option: '%s'" "$1"
+            exit 1
+            ;;
+
+        *)
+            break
+            ;;
+    esac
+done
+
+if test $# -lt 2; then
+    pr_err "Missing source and destination arguments"
+    exit 1
+fi
+
+dest=""
+
+for file in "$@"; do
+    dest="$file"
+done
+
+if test $no_dest_dir -eq 1 && test -d "$dest"; then
+    pr_err "%s: Is a directory" "${dest}"
+    exit 1
+fi
+
+pr_verbose ()
+{
+    test $verbose -eq 0 && return
+    format="$1"
+    shift
+    printf "$me: $format\n" "$@"
+}
+
+get_metadata ()
+{
+    file="$1"
+    file_ls=`ls -l1 "$file" 2>/dev/null`
+
+    if test $? -ne 0; then
+        pr_err "%s: Unable to get metadata" "${file}"
+        return 1
+    fi
+
+    mode=`printf '%s\n' "$file_ls" | cut -d' ' -f1`
+    user=`printf '%s\n' "$file_ls" | cut -d' ' -f3`
+    group=`printf '%s\n' "$file_ls" | cut -d' ' -f4`
+
+    case "$mode$user$group" in
+        *"$nl"*)
+            pr_err "%s: Not a regular file" "${file}"
+            return 1
+            ;;
+
+        *)
+            ;;
+    esac
+
+    printf "%s\n" "${mode}:${user}:${group}"
+    return 0
+}
+
+install_file ()
+{
+    i_src="$1"
+    i_dest="$2"
+    pr_verbose "Installing: %s -> %s" "$i_src" "$i_dest"
+    cp "$i_src" "$i_dest"
+    code=$?
+    test $code -ne 0 && return $code
+    chmod $mode "$i_dest"
+    return $?
+}
+
+destdir="$dest"
+test $no_dest_dir -eq 1 && destdir=`dirname "$dest"`
+
+if test $create_path -eq 1 && ! test -d "$destdir"; then
+    pr_verbose "Creating directory path: %s" "$destdir"
+    mkdir -p "$destdir"
+    code=$?
+    test $code -ne 0 && pr_err "Unable to create path: %s" "$destdir" && exit 1
+fi
+
+match1=0
+dest_meta=`get_metadata "${dest}" 2>/dev/null`
+
+if test $? -ne 0; then
+    dest_meta=""
+fi
+
+dest_is_dir=0
+test -d "$dest" && dest_is_dir=1
+
+for file in "$@"; do
+    if test "${file}" = "${dest}"; then
+        test $match1 -eq 1 && pr_err "%s: Source same location as destination" "${file}" && exit 1
+        match1=1
+        continue
+    fi
+
+    if test $compare -eq 1; then
+        meta=`get_metadata "${file}" 2>/dev/null`
+
+        if test $? -eq 0 && test -n "$dest_meta" && test "$dest_meta" = "$meta"; then
+            pr_verbose "Skipping installation of '%s': Up-to-date" "$file"
+            continue
+        fi
+    fi
+
+    if test $dest_is_dir -eq 0; then
+        install_file "$file" "$dest"
+    else
+        srcbase=`basename "$file"`
+        destpath="$dest/$srcbase"
+        install_file "$file" "$destpath"
+    fi
+
+    test $? -ne 0 && pr_err "Unable to install '%s' to '%s'" "$file" "$dest"
+done
+
+exit 0
