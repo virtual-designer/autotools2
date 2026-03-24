@@ -122,13 +122,13 @@ as_rel_path ()
     target="$[1]"
     from="$[2]"
 
+    target=`as_realpath "$target" | cut -c 2-`
+    from=`as_realpath "$from" | cut -c 2-`
+
     if test "$target" = "$from"; then
         echo "."
         return
     fi
-
-    target=`as_realpath "$target" | cut -c 2-`
-    from=`as_realpath "$from" | cut -c 2-`
 
     while test -n "$target" && test -n "$from"; do
         c1=`echo "$target" | cut -d/ -f1-1`

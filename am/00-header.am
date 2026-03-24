@@ -20,6 +20,7 @@ am_v_echo_tar_gz_1   =
 am_v_echo_tar_xz_1   =
 am_v_echo_tar_bz2_1  =
 am_v_echo_tar_lz4_1  =
+am_v_echo_tar_x_1    =
 
 am_v_echo_cc_0       = @echo "  CC        $@";
 am_v_echo_cxx_0      = @echo "  CXX       $@";
@@ -39,6 +40,7 @@ am_v_echo_tar_gz_0   = @echo "  TAR [GZ]  $@";
 am_v_echo_tar_xz_0   = @echo "  TAR [XZ]  $@";
 am_v_echo_tar_bz2_0  = @echo "  TAR [BZ2] $@";
 am_v_echo_tar_lz4_0  = @echo "  TAR [LZ4] $@";
+am_v_echo_tar_x_0    = @echo "  TAR [X]   $@";
 
 #+$if _AM_SILENT_RULES
 _AM_DEFAULT_V = 0
@@ -66,6 +68,7 @@ am_v_echo_tar_gz_    = $(am_v_echo_tar_gz_$(_AM_DEFAULT_V))
 am_v_echo_tar_xz_    = $(am_v_echo_tar_xz_$(_AM_DEFAULT_V))
 am_v_echo_tar_bz2_   = $(am_v_echo_tar_bz2_$(_AM_DEFAULT_V))
 am_v_echo_tar_lz4_   = $(am_v_echo_tar_lz4_$(_AM_DEFAULT_V))
+am_v_echo_tar_x_     = $(am_v_echo_tar_x_$(_AM_DEFAULT_V))
 
 AM_V = $(am_v_$(V))
 AM_F = $(F)
@@ -101,6 +104,7 @@ AM_V_TAR_GZ = $(am_v_echo_tar_gz_$(V))$(TAR_GZ)
 AM_V_TAR_XZ = $(am_v_echo_tar_xz_$(V))$(TAR_XZ)
 AM_V_TAR_BZ2 = $(am_v_echo_tar_bz2_$(V))$(TAR_BZ2)
 AM_V_TAR_LZ4 = $(am_v_echo_tar_lz4_$(V))$(TAR_LZ4)
+AM_V_TAR_X = $(am_v_echo_tar_x_$(V))$(TAR) -x
 AM_V_DIST_CP = $(am_v_echo_dist_cp_$(V))$(MKDIR_P) `dirname "$(PACKAGE_SUBDIR)/$(@:--am-dist=)"` && $(CP)
 
 VPATH = $(srcdir)
@@ -116,4 +120,4 @@ am_is_option_enabled = { \
 			*" $$optname"*|*"$$optname "*) optval=1; ;; \
 			*) optval=0; ;; \
 		esac; \
-	}; test $optval -eq 1
+	}; test "$$optval" -eq 1

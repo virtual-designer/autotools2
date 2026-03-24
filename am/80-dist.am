@@ -49,24 +49,25 @@ $(PACKAGE_DIR).tar.bz2: $(PACKAGE_TAR_DEPS)
 $(PACKAGE_DIR).tar.lz4: $(PACKAGE_TAR_DEPS)
 	$(AM_V_TAR_LZ4) -cf $(@:.lz4=) $(PACKAGE_DIR) && { test -f "$@" && $(RM) "$@"; true; } && $(LZ4) $(@:.lz4=) $@ && $(RM) $(@:.lz4=)
 
-dist-gz: $(PACKAGE_DIR).tar.gz
-	$(am_v_rm_pkg_dir)
+dist-gz-am: $(PACKAGE_DIR).tar.gz
+dist-xz-am: $(PACKAGE_DIR).tar.xz
+dist-bz2-am: $(PACKAGE_DIR).tar.bz2
+dist-lz4-am: $(PACKAGE_DIR).tar.lz4
 
-dist-xz: $(PACKAGE_DIR).tar.xz
-	$(am_v_rm_pkg_dir)
-
-dist-bz2: $(PACKAGE_DIR).tar.bz2
-	$(am_v_rm_pkg_dir)
-
-dist-lz4: $(PACKAGE_DIR).tar.lz4
-	$(am_v_rm_pkg_dir)
+dist-gz dist-xz dist-bz2 dist-lz4: $(PACKAGE_DIR)
+	@$(MAKE) $@-am dist-cleanup-am
 
 dist-am:
-	@case "$(AM_AUTOMAKE_OPTIONS)" in *" no-dist-gz"*|*"no-dist-gz "*) :; ;; *) $(MAKE) dist-gz; ;; esac
-	@case "$(AM_AUTOMAKE_OPTIONS)" in *" dist-xz"*|*"dist-xz "*) $(MAKE) dist-xz; ;; esac
-	@case "$(AM_AUTOMAKE_OPTIONS)" in *" dist-bz2"*|*"dist-bz2 "*) $(MAKE) dist-bz2; ;; esac
-	@case "$(AM_AUTOMAKE_OPTIONS)" in *" dist-lz4"*|*"dist-lz4 "*) $(MAKE) dist-lz4; ;; esac
+	@case "$(AM_AUTOMAKE_OPTIONS)" in *" no-dist-gz"*|*"no-dist-gz "*) :; ;; *) $(MAKE) dist-gz-am; ;; esac
+	@case "$(AM_AUTOMAKE_OPTIONS)" in *" dist-xz"*|*"dist-xz "*) $(MAKE) dist-xz-am; ;; esac
+	@case "$(AM_AUTOMAKE_OPTIONS)" in *" dist-bz2"*|*"dist-bz2 "*) $(MAKE) dist-bz2-am; ;; esac
+	@case "$(AM_AUTOMAKE_OPTIONS)" in *" dist-lz4"*|*"dist-lz4 "*) $(MAKE) dist-lz4-am; ;; esac
+	$(am_v_rm_pkg_dir)
 
+dist-cleanup-am:
+	$(am_v_rm_pkg_dir)
+
+.PHONY: dist-gz-am dist-xz-am dist-bz2-am dist-lz4-am dist-cleanup-am
 #+$endif
 #+$if ! _AM_IS_TOP_BUILDDIR
 PACKAGE_DIR = $(top_builddir)/$(PACKAGE_BASE_DIR)
@@ -79,7 +80,7 @@ dist-am dist-gz dist-xz dist-bz2 dist-lz4:
 	$(MAKE) -C $(top_builddir) $@
 #+$endif
 
-.PHONY: dist dist-am dist-gz dist-subdir-am dist-subdir-am-recursive
+.PHONY: dist dist-am dist-gz dist-xz dist-bz2 dist-lz4 dist-subdir-am dist-subdir-am-recursive
 
 dist-subdir-am: \
 	$(PACKAGE_SUBDIR) \
@@ -93,7 +94,7 @@ $(AM_DIST_FILES:=--am-dist):
 	$(AM_V_DIST_CP) $(srcdir)/$(@:--am-dist=) $(PACKAGE_SUBDIR)/$(@:--am-dist=)
 
 am_v_distclean_1 =
-am_v_distclean_0 = @echo "  DISTCLEAN $(subdir)";
+am_v_distclean_0 = @echo "  DCLEAN   $(subdir)";
 am_v_distclean_  = $(am_v_distclean_$(_AM_DEFAULT_V))
 AM_V_DISTCLEAN   = $(am_v_distclean_$(V))
 
@@ -102,11 +103,9 @@ distclean-am: clean-am distclean-recursive
 	$(AM_V_DISTCLEAN)$(RM) -r .deps && \
 #+$if _AM_IS_TOP_BUILDDIR
 	$(RM) config.status config.log && \
-	$(RM) -r .conftests
+	$(RM) -r .conftests \
 #+$endif
-#+$if ! _AM_IS_TOP_BUILDDIR
 	$(RM) Makefile
-#+$endif
 
 distclean-recursive:
 	@for dir in $(SUBDIRS); do $(MAKE) -C $$dir distclean; done
@@ -116,7 +115,64 @@ distclean-recursive:
 #+$if _AM_IS_TOP_BUILDDIR
 distcheck: distcheck-am
 distcheck-am: prepare-am dist-am
-	@echo Check successful [TODO]
+	$(AM_V) archives=""; \
+		optname="no-dist-gz" && $(am_is_option_enabled); if test $$optval -eq 0; then $(MAKE) distcheck-gz-am || exit 1; archives="$$archives $(PACKAGE_DIR).tar.gz"; fi; \
+		optname="dist-xz" && $(am_is_option_enabled); if test $$optval -eq 1; then $(MAKE) distcheck-xz-am || exit 1; archives="$$archives $(PACKAGE_DIR).tar.xz"; fi; \
+		optname="dist-bz2" && $(am_is_option_enabled); if test $$optval -eq 1; then $(MAKE) distcheck-bz2-am || exit 1; archives="$$archives $(PACKAGE_DIR).tar.bz2"; fi; \
+		optname="dist-lz4" && $(am_is_option_enabled); if test $$optval -eq 1; then $(MAKE) distcheck-lz4-am || exit 1; archives="$$archives $(PACKAGE_DIR).tar.lz4"; fi; \
+		echo "================================"; \
+		echo "Archives ready for distribution"; \
+		echo "================================"; \
+		for archive in $$archives; do \
+			echo "$$archive"; \
+		done; \
+		echo "================================";
+
+AM_DISTCHECK_DIR = $(PACKAGE_BASE_DIR)
+
+am_v_rm_distcheck_dir_0 = @echo "  RM        $(AM_DISTCHECK_DIR)";
+am_v_rm_distcheck_dir_1 =
+am_v_rm_distcheck_dir_ = $(am_v_rm_distcheck_dir_$(_AM_DEFAULT_V))
+am_v_rm_distcheck_dir = $(am_v_rm_distcheck_dir_$(V))$(RM) -r $(AM_DISTCHECK_DIR)
+
+am_v_tar_x_distcheck_0 = @echo "  TAR [X]    $(AM_DISTCHECK_DIR)";
+am_v_tar_x_distcheck_1 =
+am_v_tar_x_distcheck_ = $(am_v_tar_x_distcheck_$(_AM_DEFAULT_V))
+am_v_tar_x_distcheck = $(am_v_tar_x_distcheck_$(V))$(TAR) -xf $(AM_DISTCHECK_DIR)
+
+distcheck-gz-am:
+	$(am_v_tar_x_distcheck).tar.gz
+	@$(MAKE) distcheck-common-am
+	$(am_v_rm_distcheck_dir)
+
+distcheck-xz-am:
+	$(am_v_tar_x_distcheck).tar.xz
+	@$(MAKE) distcheck-common-am
+	$(am_v_rm_distcheck_dir)
+
+distcheck-bz2-am:
+	$(am_v_tar_x_distcheck).tar.bz2
+	@$(MAKE) distcheck-common-am
+	$(am_v_rm_distcheck_dir)
+
+distcheck-lz4-am:
+	$(am_v_tar_x_distcheck).tar.lz4
+	@$(MAKE) distcheck-common-am
+	$(am_v_rm_distcheck_dir)
+
+distcheck-common-am:
+	cd $(AM_DISTCHECK_DIR) && \
+		$(SHELL) ./configure && \
+		$(MAKE) && \
+		$(MAKE) dist && \
+		$(MAKE) distclean
+
+.PHONY: distcheck distcheck-am distcheck-gz-am distcheck-xz-am distcheck-bz2-am distcheck-lz4-am distcheck-common-am
+#+$endif
+#+$if ! _AM_IS_TOP_BUILDDIR
+distcheck: distcheck-am
+distcheck-am:
+	@$(MAKE) -C $(top_builddir) distcheck
 
 .PHONY: distcheck distcheck-am
 #+$endif

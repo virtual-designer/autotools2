@@ -26,6 +26,8 @@ $(top_builddir)/config.status: $(top_srcdir)/configure
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	$(AM_V_GEN)cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/Makefile
 
+.PRECIOUS: Makefile
+
 install: install-am
 install-am: prepare-am install-recursive
 install-recursive:
