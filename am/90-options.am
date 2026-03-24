@@ -1,1 +1,1 @@
-AM_VALID_AUTOMAKE_OPTIONS = gnu foreign dist-gz create-tarball-version
+AM_VALID_AUTOMAKE_OPTIONS = gnu foreign no-dist-gz dist-gz create-tarball-version

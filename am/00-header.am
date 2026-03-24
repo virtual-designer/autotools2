@@ -32,7 +32,7 @@ am_v_echo_install_0  = @echo "  INSTALL   $@";
 am_v_echo_mkdir_0    = @echo "  MKDIR     $@";
 am_v_echo_mkdir_p_0  = @echo "  MKDIR [P] $@";
 am_v_echo_cp_0       = @echo "  CP        $@";
-am_v_echo_dist_cp_0  = @echo "  CP [DIST] $(PACKAGE_SUBDIR)/$(@:--am-dist=)";
+am_v_echo_dist_cp_0  = @echo "  CP        $(PACKAGE_SUBDIR)/$(@:--am-dist=)";
 am_v_echo_mv_0       = @echo "  MV        $@";
 am_v_echo_tar_0      = @echo "  TAR       $@";
 am_v_echo_tar_gz_0   = @echo "  TAR [GZ]  $@";
@@ -104,8 +104,16 @@ AM_V_TAR_LZ4 = $(am_v_echo_tar_lz4_$(V))$(TAR_LZ4)
 AM_V_DIST_CP = $(am_v_echo_dist_cp_$(V))$(MKDIR_P) `dirname "$(PACKAGE_SUBDIR)/$(@:--am-dist=)"` && $(CP)
 
 VPATH = $(srcdir)
+AM_DESTDIR = $(DESTDIR)
 
 AC_MACRO_DIR = $(top_srcdir)/$(_AC_CONFIG_VALUE_MACRO_DIR)
 AC_AUX_DIR = $(top_srcdir)/$(_AC_CONFIG_VALUE_AUX_DIR)
 AC_MACRO_FILES = $(_AC_CONFIG_VALUE_MACRO_FILES)
 AC_AUX_FILES = $(_AC_CONFIG_VALUE_AUX_FILES)
+
+am_is_option_enabled = { \
+		case "$(AM_AUTOMAKE_OPTIONS)" in \
+			*" $$optname"*|*"$$optname "*) optval=1; ;; \
+			*) optval=0; ;; \
+		esac; \
+	}; test $optval -eq 1

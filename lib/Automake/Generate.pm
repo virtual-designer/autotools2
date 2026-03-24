@@ -43,6 +43,7 @@ sub gen_template
         errors => $errors,
         buffers => \@buffers,
         next_dirs => $next_dirs,
+        input_am => $input_am,
         input_am_base => $input_am_base,
         sysdirs => {},
         program_vars => {},
@@ -52,7 +53,7 @@ sub gen_template
         cond_stack => [],
         am_options => "dist-gz",
         var_index => 0,
-        dist_files => "",
+        dist_targets => "",
     );
 
     for (my $i = 0; $i < MAX_BUF_COUNT; $i++) {
@@ -111,6 +112,10 @@ sub gen_template
         }
 
         close ($am_fh);
+
+        if ($am_file eq $input_am) {
+            $buffers[BUF_USER] .= "AM_AUTO_DIST_FILES = " . $context{dist_targets} . "\n\n";
+        }
     }
 
     if (scalar (@$last3lines) >= 3) {
@@ -236,8 +241,9 @@ sub process_line
         @{$buffers_ref}[BUF_USER] .= "${program}_OBJECTS1 = \$(${program}_OBJECTS0:.cxx=.o)\n";
         @{$buffers_ref}[BUF_USER] .= "${program}_OBJECTS2 = \$(${program}_OBJECTS1:.cpp=.o)\n";
         @{$buffers_ref}[BUF_USER] .= "${program}_OBJECTS = \$(${program}_OBJECTS2:.cc=.o)\n\n";
+        @{$buffers_ref}[BUF_VARS] .= "${program}_SOURCES_DIST = $2\n";
 
-        $context->{dist_files} .= " " . $2 . " ";
+        $context->{dist_targets} .= " \$(${program}_SOURCES_DIST)";
         return;
     }
     elsif ($line =~ /^if[ \t]+([A-Za-z0-9_]+)/) {
@@ -329,12 +335,6 @@ sub finalize
 
     @{$buffers}[BUF_USER] .= "AM_AUTOMAKE_OPTIONS = \$(AUTOMAKE_OPTIONS) \$(AUTOMAKE_OPTIONS_ADD) " . $context->{am_options} . "\n\n";
 
-    # TODO: Use regex to create a _DIST variable for each SOURCES and HEADERS variable, before any condition
-    @{$buffers}[BUF_USER] .= "AM_DIST_STATIC_FILES = " . $context->{dist_files} . "\n\n";
-    @{$buffers}[BUF_USER] .= "dist-subdir-am: \$(AM_DIST_STATIC_FILES:=--am-dist)\n";
-    @{$buffers}[BUF_USER] .= "\$(AM_DIST_STATIC_FILES:=--am-dist):\n";
-    @{$buffers}[BUF_USER] .= "\t\$(AM_V_DIST_CP) \$(srcdir)/\$(\@:--am-dist=) \$(PACKAGE_SUBDIR)/\$(\@:--am-dist=)\n";
-
     sub cleanup
     {
         my ($name_raw, $name, $context) = @_;
@@ -372,14 +372,14 @@ sub finalize
             @{$buffers}[BUF_USER] .= "${program_raw}: \$(${program}_OBJECTS)\n";
             @{$buffers}[BUF_USER] .= "\t\$(AM_V_CCLD) \$(AM_LDFLAGS) \$(LDFLAGS) \$(${program}_LDFLAGS)  -o \$@ \$(${program}_OBJECTS) \$(${program}_LDADD) \$(LDADD) \$(LDLIBS) \$(LIBS)\n\n";
 
-            @{$buffers}[BUF_USER] .= "${program_raw}--am-install: \$(${program_var}dir)/${program_raw}\n";
+            @{$buffers}[BUF_USER] .= "${program_raw}--am-install: \$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}\n";
 
-            @{$buffers}[BUF_USER] .= "am_prog_${program}_name_f_1 = \$(${program_var}dir)/${program_raw}\n";
+            @{$buffers}[BUF_USER] .= "am_prog_${program}_name_f_1 = \$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}\n";
             @{$buffers}[BUF_USER] .= "am_prog_${program}_name_f_0 = \n";
             @{$buffers}[BUF_USER] .= "am_prog_${program}_name_f_  = \n";
             @{$buffers}[BUF_USER] .= ".PHONY: \$(am_prog_${program}_name_f_\$(AM_F))\n\n";
 
-            @{$buffers}[BUF_USER] .= "\$(${program_var}dir)/${program_raw}: ${program_raw}\n";
+            @{$buffers}[BUF_USER] .= "\$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}: ${program_raw}\n";
             @{$buffers}[BUF_USER] .= "\t\$(AM_V_INSTALL) -D -T -m 0755 ${program_raw} \$\@\n\n";
 
             cleanup ($program_raw, $program, $context);
@@ -403,14 +403,14 @@ sub finalize
             @{$buffers}[BUF_USER] .= "${lib_raw}: \$(${lib}_OBJECTS)\n";
             @{$buffers}[BUF_USER] .= "\t\$(AM_V_AR) \$(AM_ARFLAGS) \$(ARFLAGS) \$(${lib}_ARFLAGS) rcs \$@ \$(${lib}_OBJECTS) \$(${lib}_LIBADD) \$(LIBADD) \$(LIBS)\n\n";
 
-            @{$buffers}[BUF_USER] .= "${lib_raw}--am-install: \$(${lib_var}dir)/${lib_raw}\n";
+            @{$buffers}[BUF_USER] .= "${lib_raw}--am-install: \$(AM_DESTDIR)\$(${lib_var}dir)/${lib_raw}\n";
 
-            @{$buffers}[BUF_USER] .= "am_lib_${lib}_name_f_1 = \$(${lib_var}dir)/${lib_raw}\n";
+            @{$buffers}[BUF_USER] .= "am_lib_${lib}_name_f_1 = \$(AM_DESTDIR)\$(${lib_var}dir)/${lib_raw}\n";
             @{$buffers}[BUF_USER] .= "am_lib_${lib}_name_f_0 = \n";
             @{$buffers}[BUF_USER] .= "am_lib_${lib}_name_f_  = \n";
             @{$buffers}[BUF_USER] .= ".PHONY: \$(am_lib_${lib}_name_f_\$(AM_F))\n\n";
 
-            @{$buffers}[BUF_USER] .= "\$(${lib_var}dir)/${lib_raw}: ${lib_raw}\n";
+            @{$buffers}[BUF_USER] .= "\$(AM_DESTDIR)\$(${lib_var}dir)/${lib_raw}: ${lib_raw}\n";
             @{$buffers}[BUF_USER] .= "\t\$(AM_V_INSTALL) -D -T -m 0644 ${lib_raw} \$@\n";
 
             cleanup ($lib_raw, $lib, $context);

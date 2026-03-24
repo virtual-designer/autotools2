@@ -62,10 +62,10 @@ dist-lz4: $(PACKAGE_DIR).tar.lz4
 	$(am_v_rm_pkg_dir)
 
 dist-am:
-	@case "$(AM_VALID_AUTOMAKE_OPTIONS)" in *" dist-gz"*|*"dist-gz "*) $(MAKE) dist-gz; ;; esac
-	@case "$(AM_VALID_AUTOMAKE_OPTIONS)" in *" dist-xz"*|*"dist-xz "*) $(MAKE) dist-xz; ;; esac
-	@case "$(AM_VALID_AUTOMAKE_OPTIONS)" in *" dist-bz2"*|*"dist-bz2 "*) $(MAKE) dist-bz2; ;; esac
-	@case "$(AM_VALID_AUTOMAKE_OPTIONS)" in *" dist-lz4"*|*"dist-lz4 "*) $(MAKE) dist-lz4; ;; esac
+	@case "$(AM_AUTOMAKE_OPTIONS)" in *" no-dist-gz"*|*"no-dist-gz "*) :; ;; *) $(MAKE) dist-gz; ;; esac
+	@case "$(AM_AUTOMAKE_OPTIONS)" in *" dist-xz"*|*"dist-xz "*) $(MAKE) dist-xz; ;; esac
+	@case "$(AM_AUTOMAKE_OPTIONS)" in *" dist-bz2"*|*"dist-bz2 "*) $(MAKE) dist-bz2; ;; esac
+	@case "$(AM_AUTOMAKE_OPTIONS)" in *" dist-lz4"*|*"dist-lz4 "*) $(MAKE) dist-lz4; ;; esac
 
 #+$endif
 #+$if ! _AM_IS_TOP_BUILDDIR
