@@ -380,6 +380,7 @@ sub finalize
             @{$buffers}[BUF_USER] .= "\t\$(${program}_LINK)  -o \$@ \$(${program}_OBJECTS) \$(${program}_LDADD) \$(LDADD) \$(LDLIBS) \$(LIBS)\n\n";
 
             @{$buffers}[BUF_USER] .= "${program_raw}--am-install: \$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}\n";
+            @{$buffers}[BUF_USER] .= "${program_raw}--am-uninstall: \$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}--am-uninstall\n";
 
             @{$buffers}[BUF_USER] .= "am_prog_${program}_name_f_1 = \$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}\n";
             @{$buffers}[BUF_USER] .= "am_prog_${program}_name_f_0 = \n";
@@ -389,6 +390,9 @@ sub finalize
             @{$buffers}[BUF_USER] .= "\$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}: ${program_raw} \$(AM_DESTDIR)\$(${program_var}dir)\n";
             @{$buffers}[BUF_USER] .= "\t\$(AM_V_INSTALL) -m 0755 ${program_raw} '\$(AM_DESTDIR)\$(${program_var}dir)'\n";
 
+            @{$buffers}[BUF_USER] .= "\$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}--am-uninstall:\n";
+            @{$buffers}[BUF_USER] .= "\t\$(AM_V_UNINSTALL) '\$(\@:--am-uninstall=)'\n";
+
             cleanup ($program_raw, $program, $context);
         }
 
@@ -396,6 +400,7 @@ sub finalize
         @{$buffers}[BUF_USER] .= "\t\$(AM_V_MKDIR_P) \$\@\n\n";
         @{$buffers}[BUF_USER] .= "clean-am: \$(${program_var}_PROGRAMS:=--am-clean)\n";
         @{$buffers}[BUF_USER] .= "install-am: \$(${program_var}_PROGRAMS:=--am-install)\n\n";
+        @{$buffers}[BUF_USER] .= "uninstall-am: \$(${program_var}_PROGRAMS:=--am-uninstall)\n\n";
     }
 
     foreach my $lib_var (keys %{%$context{lib_vars}}) {
@@ -413,6 +418,7 @@ sub finalize
             @{$buffers}[BUF_USER] .= "\t\$(AM_V_AR) \$(AM_ARFLAGS) \$(ARFLAGS) \$(${lib}_ARFLAGS) rcs \$@ \$(${lib}_OBJECTS) \$(${lib}_LIBADD) \$(LIBADD) \$(LIBS)\n\n";
 
             @{$buffers}[BUF_USER] .= "${lib_raw}--am-install: \$(AM_DESTDIR)\$(${lib_var}dir)/${lib_raw}\n";
+            @{$buffers}[BUF_USER] .= "${lib_raw}--am-uninstall: \$(AM_DESTDIR)\$(${lib_var}dir)/${lib_raw}--am-uninstall\n";
 
             @{$buffers}[BUF_USER] .= "am_lib_${lib}_name_f_1 = \$(AM_DESTDIR)\$(${lib_var}dir)/${lib_raw}\n";
             @{$buffers}[BUF_USER] .= "am_lib_${lib}_name_f_0 = \n";
@@ -422,6 +428,9 @@ sub finalize
             @{$buffers}[BUF_USER] .= "\$(AM_DESTDIR)\$(${lib_var}dir)/${lib_raw}: ${lib_raw} \$(AM_DESTDIR)\$(${lib_var}dir)\n";
             @{$buffers}[BUF_USER] .= "\t\$(AM_V_INSTALL) -m 0644 ${lib_raw} '\$(AM_DESTDIR)\$(${lib_var}dir)'\n";
 
+            @{$buffers}[BUF_USER] .= "\$(AM_DESTDIR)\$(${lib_var}dir)/${lib_raw}--am-uninstall:\n";
+            @{$buffers}[BUF_USER] .= "\t\$(AM_V_UNINSTALL) '\$(\@:--am-uninstall=)'\n";
+
             cleanup ($lib_raw, $lib, $context);
         }
 
@@ -429,6 +438,7 @@ sub finalize
         @{$buffers}[BUF_USER] .= "\t\$(AM_V_MKDIR_P) \$\@\n\n";
         @{$buffers}[BUF_USER] .= "clean-am: \$(${lib_var}_LIBRARIES:=--am-clean)\n";
         @{$buffers}[BUF_USER] .= "install-am: \$(${lib_var}_LIBRARIES:=--am-install)\n\n";
+        @{$buffers}[BUF_USER] .= "uninstall-am: \$(${lib_var}_LIBRARIES:=--am-uninstall)\n\n";
     }
 
     @$buffers[BUF_END] .= "\n";

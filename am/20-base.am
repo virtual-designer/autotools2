@@ -34,6 +34,14 @@ install-recursive:
 	@for dir in $(SUBDIRS); do $(MAKE) -C $$dir install; done
 
 .PHONY: install install-am install-recursive
-.PHONY: prepare-am
+
+uninstall: uninstall-am
+uninstall-am: prepare-am uninstall-recursive
+uninstall-recursive:
+	@for dir in $(SUBDIRS); do $(MAKE) -C $$dir uninstall; done
+
+.PHONY: uninstall uninstall-am uninstall-recursive
 
 prepare-am:
+
+.PHONY: prepare-am
