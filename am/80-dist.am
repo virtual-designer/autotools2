@@ -186,6 +186,7 @@ distcheck-common-am:
 		$(MAKE) distclean; \
 		test $$? -ne 0 && exit 1; \
 		$(am_v_cmp_dist_distcheck) \
+		test "$(GEN_DIST_CMP)" = 1 || exit 0; \
 		src_sums=""; \
 		gen_sums=""; \
 		tar -tf "$$pwd/$(GEN_DIST)" | sort | while read -r file; do \

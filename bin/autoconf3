@@ -78,7 +78,7 @@ pids=''
 
 trap 'code=$?; rm -f "$tmp" "$aux_install_list"; test -n "$pids" && kill -TERM $pids > /dev/null 2>&1; exit $code' EXIT INT TERM
 
-printf "$BOLD$me:$RESET Processing configure.ac\n"
+printf "$me: Processing configure.ac\n"
 
 aclocal_m4_include=
 test -f "${cwd}aclocal.m4" && aclocal_m4_include="${cwd}aclocal.m4"

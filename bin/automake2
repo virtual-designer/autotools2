@@ -140,7 +140,7 @@ sub traverse
 {
     my ($wd, $root_wd, $line_num) = @_;
     my $file = $file_stack[scalar (@file_stack) - 1];
-    my $diag_prefix = "$BOLD$file:" . ($line_num == 0 ? "" : $line_num) . $RESET;
+    my $diag_prefix = ($line_num == 0 ? "" : $BOLD) . "$file:" . ($line_num == 0 ? "" : $line_num) . $RESET;
 
     print ("${diag_prefix} Entering directory: $wd\n");
     push (@file_stack, ($wd eq "." ? "" : "$wd/") . "$input_file");

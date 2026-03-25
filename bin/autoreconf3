@@ -1,15 +1,35 @@
 #!/bin/sh
 
+me_full="$0"
+me=`basename "$0"`
+
+if ! command -v grep > /dev/null 2>&1; then
+    printf "$me: grep command is not available\n" >&2
+    exit 1
+fi
+
 cmd ()
 {
+    printf "$me: executing: %s\n" "$*"
     $@
     code=$?
     test $code -ne 0 && exit $code
 }
 
 test -f Makefile.am && {
-    cmd aclocal2
+    aclocal_flags=""
+
+    while read -r line; do
+        if ! echo "$line" | grep -q 'ACLOCAL_AMFLAGS[[:space:]]*='; then
+            continue
+        fi
+
+        flags=`echo "$line" | cut -d'=' -f2-`
+        aclocal_flags="${aclocal_flags} ${flags}"
+    done < Makefile.am
+
     cmd automake2
+    cmd aclocal2 $aclocal_flags
 }
 
 test -f configure.ac && cmd autoconf3

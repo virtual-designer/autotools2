@@ -27,7 +27,17 @@ AC_DEFUN([AC_OUTPUT], [
     AC_SUBST([PACKAGE_URL])
 
     _CONFIG_VALUE_AUX_DIR=`as_rel_path "$as_build_aux_dir" "$top_srcdir"`
-    _CONFIG_VALUE_MACRO_DIR=`as_rel_path "$as_config_macro_dir" "$top_srcdir"`
+    _CONFIG_VALUE_MACRO_DIRS=''
+
+    for mdir in $as_config_macro_dirs; do
+        mdir_rel=`as_rel_path "$mdir" "$top_srcdir"`
+        if test "$mdir_rel" = "."; then
+            mdir_rel=""
+        else
+            mdir_rel="${mdir_rel}/"
+        fi
+        _CONFIG_VALUE_MACRO_DIRS="${_CONFIG_VALUE_MACRO_DIRS}${mdir_rel} "
+    done
 
     if test "$_CONFIG_VALUE_AUX_DIR" = "."; then
         _CONFIG_VALUE_AUX_DIR=""
@@ -35,19 +45,21 @@ AC_DEFUN([AC_OUTPUT], [
         _CONFIG_VALUE_AUX_DIR="${_CONFIG_VALUE_AUX_DIR}/"
     fi
 
-    if test "$_CONFIG_VALUE_MACRO_DIR" = "."; then
-        _CONFIG_VALUE_MACRO_DIR=""
-    else
-        _CONFIG_VALUE_MACRO_DIR="${_CONFIG_VALUE_MACRO_DIR}/"
-    fi
-
     AC_SUBST([_AC_CONFIG_VALUE_AUX_DIR], [$_CONFIG_VALUE_AUX_DIR])
-    AC_SUBST([_AC_CONFIG_VALUE_MACRO_DIR], [$_CONFIG_VALUE_MACRO_DIR])
+    AC_SUBST([_AC_CONFIG_VALUE_MACRO_DIRS], [$_CONFIG_VALUE_MACRO_DIRS])
 
-    as_macro_files=`cd "$as_config_macro_dir" && ls -1 *.m4 | xargs -n 1 printf '%s%s' "$_CONFIG_VALUE_MACRO_DIR"` || {
-        AC_MSG_ERROR([Unable to read macro directory: $as_config_macro_dir])
-    }
+    as_macro_files=''
+    pwd=`pwd`
+    cd "$top_srcdir" || exit 1
 
+    for mdir in $_CONFIG_VALUE_MACRO_DIRS; do
+        list=`cd "$mdir" && ls -1 *.m4 2>/dev/null` || continue
+        test -z "$mdir" && continue
+        files=`printf '%s\n' "$list" | xargs -n 1 printf '%s%s ' "$mdir"`
+        as_macro_files="${as_macro_files} ${files}"
+    done
+
+    cd "$pwd" || exit 1
     as_aux_files=""
 
     for file in []_ac_aux_files[]; do

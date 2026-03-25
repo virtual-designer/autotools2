@@ -8,6 +8,13 @@ AM_HOME_DIR=`dirname "$AM_HOME_DIR"`
 color=0
 test -t 1 && test -t 2 && color=1
 
+nl='
+'
+tab='	'
+spc=' '
+
+IFS="${spc}${tab}${nl}"
+
 pr_err ()
 {
 	format="$1"
@@ -22,12 +29,42 @@ show_version ()
 	echo "Written by Ar Rakin <rakinar2@osndevs.org>."
 }
 
+usage ()
+{
+    cat <<EOF
+Generate a local macro bundle file for Autoconf.
+
+Usage:
+  $0 [OPTION]... [FILE...]
+
+Options:
+  -h, --help              Show this help and exit.
+  -V, --version           Show version information.
+  -I, --include=<PATH>    Add a macro include path.
+
+Send bug reports to <rakinar2@osndevs.org>.
+EOF
+}
+
+include_path=""
+
 while test $# -gt 0; do
 	case "$1" in
 		-V|--version)
 			show_version
 			exit 0
 			;;
+
+        -h|--help)
+            usage
+            exit 0
+            ;;
+
+        -I|--include)
+            test -z "$2" && pr_err "Option '$1' requires an argument" && exit 1
+            include_path="${include_path} $2"
+            shift 2
+            ;;
 
 		--)
 			shift
@@ -45,14 +82,18 @@ while test $# -gt 0; do
 	esac
 done
 
-if test $# -gt 0; then
-	pr_err "Invalid argument '%s'" "$1"
-	exit 1
-fi
+files="$@"
+
+for ipath in $include_path; do
+    for file in "${ipath}/"*.m4; do
+        test "$file" = "${ipath}/"'*'".m4" && continue
+        files="${files} ${file}"
+    done
+done
 
 echo "" > "aclocal.m4"
 
-for file in "${AM_HOME_DIR}/m4/automake/"*; do
+for file in "${AM_HOME_DIR}/m4/automake/"*.m4 $files; do
     cat "$file" >> "aclocal.m4"
     echo "" >> "aclocal.m4"
     echo "" >> "aclocal.m4"
