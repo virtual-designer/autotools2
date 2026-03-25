@@ -32,7 +32,7 @@ usage ()
 Wrapper for compilers that do not understand -c and -o together.
 
 Usage:
-  $0 [OPTION]... <CC> <FILE>... [-o] <OUT>
+  $0 [OPTION]... <COMPILER> [COMPILER_OPTIONS]... <FILE>... [-o] <OUT>
 
 Options:
       --help         Show this help and exit.
