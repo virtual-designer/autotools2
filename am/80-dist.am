@@ -49,6 +49,9 @@ $(PACKAGE_DIR).tar.bz2: $(PACKAGE_TAR_DEPS)
 $(PACKAGE_DIR).tar.lz4: $(PACKAGE_TAR_DEPS)
 	$(AM_V_TAR_LZ4) -cf $(@:.lz4=) $(PACKAGE_DIR) && { test -f "$@" && $(RM) "$@"; true; } && $(LZ4) $(@:.lz4=) $@ && $(RM) $(@:.lz4=)
 
+.PRECIOUS: $(PACKAGE_DIR).tar.gz $(PACKAGE_DIR).tar.xz \
+           $(PACKAGE_DIR).tar.bz2 $(PACKAGE_DIR).tar.lz4
+
 dist-gz-am: $(PACKAGE_DIR).tar.gz
 dist-xz-am: $(PACKAGE_DIR).tar.xz
 dist-bz2-am: $(PACKAGE_DIR).tar.bz2
@@ -130,44 +133,73 @@ distcheck-am: prepare-am dist-am
 
 AM_DISTCHECK_DIR = $(PACKAGE_BASE_DIR)
 
-am_v_rm_distcheck_dir_0 = @echo "  RM        $(AM_DISTCHECK_DIR)";
+am_v_rm_distcheck_dir_0 = echo "  RM       $(AM_DISTCHECK_DIR)" &&
 am_v_rm_distcheck_dir_1 =
 am_v_rm_distcheck_dir_ = $(am_v_rm_distcheck_dir_$(_AM_DEFAULT_V))
 am_v_rm_distcheck_dir = $(am_v_rm_distcheck_dir_$(V))$(RM) -r $(AM_DISTCHECK_DIR)
 
-am_v_tar_x_distcheck_0 = @echo "  TAR [X]    $(AM_DISTCHECK_DIR)";
+am_v_tar_x_distcheck_0 = @echo "  TAR [X]   $(AM_DISTCHECK_DIR)";
 am_v_tar_x_distcheck_1 =
 am_v_tar_x_distcheck_ = $(am_v_tar_x_distcheck_$(_AM_DEFAULT_V))
-am_v_tar_x_distcheck = $(am_v_tar_x_distcheck_$(V))$(TAR) -xf $(AM_DISTCHECK_DIR)
+am_v_tar_x_distcheck = $(am_v_tar_x_distcheck_$(V))$(TAR) -xf
 
 distcheck-gz-am:
-	$(am_v_tar_x_distcheck).tar.gz
-	@$(MAKE) distcheck-common-am
-	$(am_v_rm_distcheck_dir)
+	$(am_v_tar_x_distcheck) $(AM_DISTCHECK_DIR).tar.gz
+	@$(MAKE) distcheck-common-am GEN_DIST=$(AM_DISTCHECK_DIR).tar.gz; \
+		code=$$?; \
+		$(am_v_rm_distcheck_dir) && exit $$code
 
 distcheck-xz-am:
-	$(am_v_tar_x_distcheck).tar.xz
-	@$(MAKE) distcheck-common-am
-	$(am_v_rm_distcheck_dir)
+	$(am_v_tar_x_distcheck) $(AM_DISTCHECK_DIR).tar.xz
+	@$(MAKE) distcheck-common-am GEN_DIST=$(AM_DISTCHECK_DIR).tar.xz; \
+		code=$$?; \
+		$(am_v_rm_distcheck_dir) && exit $$code
 
 distcheck-bz2-am:
-	$(am_v_tar_x_distcheck).tar.bz2
-	@$(MAKE) distcheck-common-am
-	$(am_v_rm_distcheck_dir)
+	$(am_v_tar_x_distcheck) $(AM_DISTCHECK_DIR).tar.bz2
+	@$(MAKE) distcheck-common-am GEN_DIST=$(AM_DISTCHECK_DIR).tar.bz2; \
+		code=$$?; \
+		$(am_v_rm_distcheck_dir) && exit $$code
 
 distcheck-lz4-am:
-	$(am_v_tar_x_distcheck).tar.lz4
-	@$(MAKE) distcheck-common-am
-	$(am_v_rm_distcheck_dir)
+	$(am_v_tar_x_distcheck) $(AM_DISTCHECK_DIR).tar.lz4
+	@$(MAKE) distcheck-common-am GEN_DIST=$(AM_DISTCHECK_DIR).tar.lz4; \
+		code=$$?; \
+		$(am_v_rm_distcheck_dir) && exit $$code
+
+am_v_run_configure_distcheck_0 = echo "  RUN       $(AM_DISTCHECK_DIR)/configure" &&
+am_v_run_configure_distcheck_1 =
+am_v_run_configure_distcheck_ = $(am_v_run_configure_distcheck_$(_AM_DEFAULT_V))
+am_v_run_configure_distcheck = $(am_v_run_configure_distcheck_$(V)) $(SHELL) ./configure
+
+am_v_cmp_dist_distcheck_0 = echo "  CMP      $(GEN_DIST) $(AM_DISTCHECK_DIR)/$(GEN_DIST)";
+am_v_cmp_dist_distcheck_1 =
+am_v_cmp_dist_distcheck_ = $(am_v_cmp_dist_distcheck_$(_AM_DEFAULT_V))
+am_v_cmp_dist_distcheck = $(am_v_cmp_dist_distcheck_$(V))
 
 distcheck-common-am:
-	cd $(AM_DISTCHECK_DIR) && \
-		$(SHELL) ./configure && \
+	$(AM_V) pwd=`pwd`; \
+	    cd $(AM_DISTCHECK_DIR) && \
+		$(am_v_run_configure_distcheck) && \
 		$(MAKE) && \
 		$(MAKE) dist && \
-		$(MAKE) distclean
+		$(MAKE) distclean; \
+		test $$? -ne 0 && exit 1; \
+		$(am_v_cmp_dist_distcheck) \
+		src_sums=""; \
+		gen_sums=""; \
+		tar -tf "$$pwd/$(GEN_DIST)" | sort | while read -r file; do \
+			sum=`tar -xOf "$$pwd/$(GEN_DIST)" "$$file" | sha1sum -`; \
+			src_sums="$$src_sums $$sum"; \
+		done; \
+		tar -tf "$(GEN_DIST)" | sort | while read -r file; do \
+			sum=`tar -xOf "$(GEN_DIST)" "$$file" | sha1sum -`; \
+			gen_sums="$$gen_sums $$sum"; \
+		done; \
+		test "$$src_sums" = "$$gen_sums"
 
-.PHONY: distcheck distcheck-am distcheck-gz-am distcheck-xz-am distcheck-bz2-am distcheck-lz4-am distcheck-common-am
+.PHONY: distcheck distcheck-am distcheck-gz-am distcheck-xz-am \
+        distcheck-bz2-am distcheck-lz4-am distcheck-common-am
 #+$endif
 #+$if ! _AM_IS_TOP_BUILDDIR
 distcheck: distcheck-am

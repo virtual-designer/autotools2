@@ -70,8 +70,7 @@ fi
 : ${M4:=m4}
 : ${TMPDIR:=/tmp}
 
-aux_install_list=`echo "mkstemp(\\\`${TMPDIR}/autoconf3tmp_XXXXXX')" | $M4`
-
+aux_install_list=`mktemp`
 rm -f "$aux_install_list"
 mkfifo "$aux_install_list"
 tmp=`mktemp`
@@ -85,7 +84,8 @@ aclocal_m4_include=
 test -f "${cwd}aclocal.m4" && aclocal_m4_include="${cwd}aclocal.m4"
 
 {
-    while read -r line; do
+    while :; do
+		read -r line 2>/dev/null < "$aux_install_list"
         file=`printf '%s\n' "$line" | cut -d'|' -f1`
         line_num=`printf '%s\n' "$line" | cut -d'|' -f2`
         script=`printf '%s\n' "$line" | cut -d'|' -f3-`
@@ -98,7 +98,7 @@ test -f "${cwd}aclocal.m4" && aclocal_m4_include="${cwd}aclocal.m4"
         script_name=`basename "$script"`
         script_dir=`dirname "$script"`
         "${AC_HOME_DIR}/libexec/install-aux-script" -D -i "$script_name" "$script_dir"
-    done < "$aux_install_list"
+    done
 } &
 
 pids="${pids} $!"
@@ -139,21 +139,28 @@ awk -v COLOR="$color" '
 		next;
 	}
 
+	/^# / {
+		next;
+	}
+
 	FILENAME == ARGV[1] {
 		ignore = 1;
 		line = $0;
 
-		while (match (line, /_?(AC|AS|AM)_[A-Za-z0-9_]+/)) {
-			macro = substr ($0, RSTART, RLENGTH);
+		while (match (line, /\$?_?(AC|AS|AM)_[A-Za-z0-9_]+/)) {
+			rstart = RSTART;
+			rlength = RLENGTH;
+
+			macro = substr (line, rstart, rlength);
             gsub (/^[[:space:]]+|[[:space:]]+$/, "", macro);
 
-			if (macro ~ /^[[:space:]]*_/) {
-				line = substr (line, RSTART + RLENGTH);
+			if (substr(macro, 1, 1) == "_" || substr(macro, 1, 1) == "$") {
+				line = substr (line, rstart + rlength);
 				continue;
 			}
 
 			print BOLD "configure:" FNR ": " RESET BOLD MAGENTA "warning: " RESET "Possible use of undefined macro '"'"'" macro "'"'"', not expanded" > "/dev/stderr";
-			line = substr (line, RSTART + RLENGTH);
+			line = substr (line, rstart + rlength);
             warnings++;
 
 			for (key in files) {

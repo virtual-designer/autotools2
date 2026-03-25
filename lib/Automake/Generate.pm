@@ -243,6 +243,10 @@ sub process_line
         @{$buffers_ref}[BUF_USER] .= "${program}_OBJECTS = \$(${program}_OBJECTS2:.cc=.o)\n\n";
         @{$buffers_ref}[BUF_VARS] .= "${program}_SOURCES_DIST = $2\n";
 
+        if ($2 =~ /\.(cc|cxx|cpp)/) {
+            @{$buffers_ref}[BUF_USER] .= "${program}_LD = \$(AM_V_CXXLD)\n";
+        }
+
         $context->{dist_targets} .= " \$(${program}_SOURCES_DIST)";
         return;
     }
@@ -368,9 +372,12 @@ sub finalize
             my $program = $program_raw;
             $program =~ s/[\.-\/]/_/g;
 
+            @{$buffers}[BUF_VARS] .= "${program}_LD = \$(AM_V_CCLD)\n";
+            @{$buffers}[BUF_VARS] .= "${program}_LINK = \$(${program}_LD) \$(AM_LDFLAGS) \$(LDFLAGS) \$(${program}_LDFLAGS)\n";
+
             @{$buffers}[BUF_USER] .= "${program_raw}--am-all: ${program_raw}\n";
             @{$buffers}[BUF_USER] .= "${program_raw}: \$(${program}_OBJECTS)\n";
-            @{$buffers}[BUF_USER] .= "\t\$(AM_V_CCLD) \$(AM_LDFLAGS) \$(LDFLAGS) \$(${program}_LDFLAGS)  -o \$@ \$(${program}_OBJECTS) \$(${program}_LDADD) \$(LDADD) \$(LDLIBS) \$(LIBS)\n\n";
+            @{$buffers}[BUF_USER] .= "\t\$(${program}_LINK)  -o \$@ \$(${program}_OBJECTS) \$(${program}_LDADD) \$(LDADD) \$(LDLIBS) \$(LIBS)\n\n";
 
             @{$buffers}[BUF_USER] .= "${program_raw}--am-install: \$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}\n";
 
@@ -379,12 +386,14 @@ sub finalize
             @{$buffers}[BUF_USER] .= "am_prog_${program}_name_f_  = \n";
             @{$buffers}[BUF_USER] .= ".PHONY: \$(am_prog_${program}_name_f_\$(AM_F))\n\n";
 
-            @{$buffers}[BUF_USER] .= "\$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}: ${program_raw}\n";
-            @{$buffers}[BUF_USER] .= "\t\$(AM_V_INSTALL) -D -T -m 0755 ${program_raw} \$\@\n\n";
+            @{$buffers}[BUF_USER] .= "\$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}: ${program_raw} \$(AM_DESTDIR)\$(${program_var}dir)\n";
+            @{$buffers}[BUF_USER] .= "\t\$(AM_V_INSTALL) -m 0755 ${program_raw} '\$(AM_DESTDIR)\$(${program_var}dir)'\n";
 
             cleanup ($program_raw, $program, $context);
         }
 
+        @{$buffers}[BUF_USER] .= "\$(AM_DESTDIR)\$(${program_var}dir):\n";
+        @{$buffers}[BUF_USER] .= "\t\$(AM_V_MKDIR_P) \$\@\n\n";
         @{$buffers}[BUF_USER] .= "clean-am: \$(${program_var}_PROGRAMS:=--am-clean)\n";
         @{$buffers}[BUF_USER] .= "install-am: \$(${program_var}_PROGRAMS:=--am-install)\n\n";
     }
@@ -410,12 +419,14 @@ sub finalize
             @{$buffers}[BUF_USER] .= "am_lib_${lib}_name_f_  = \n";
             @{$buffers}[BUF_USER] .= ".PHONY: \$(am_lib_${lib}_name_f_\$(AM_F))\n\n";
 
-            @{$buffers}[BUF_USER] .= "\$(AM_DESTDIR)\$(${lib_var}dir)/${lib_raw}: ${lib_raw}\n";
-            @{$buffers}[BUF_USER] .= "\t\$(AM_V_INSTALL) -D -T -m 0644 ${lib_raw} \$@\n";
+            @{$buffers}[BUF_USER] .= "\$(AM_DESTDIR)\$(${lib_var}dir)/${lib_raw}: ${lib_raw} \$(AM_DESTDIR)\$(${lib_var}dir)\n";
+            @{$buffers}[BUF_USER] .= "\t\$(AM_V_INSTALL) -m 0644 ${lib_raw} '\$(AM_DESTDIR)\$(${lib_var}dir)'\n";
 
             cleanup ($lib_raw, $lib, $context);
         }
 
+        @{$buffers}[BUF_USER] .= "\$(AM_DESTDIR)\$(${lib_var}dir):\n";
+        @{$buffers}[BUF_USER] .= "\t\$(AM_V_MKDIR_P) \$\@\n\n";
         @{$buffers}[BUF_USER] .= "clean-am: \$(${lib_var}_LIBRARIES:=--am-clean)\n";
         @{$buffers}[BUF_USER] .= "install-am: \$(${lib_var}_LIBRARIES:=--am-install)\n\n";
     }

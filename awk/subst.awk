@@ -14,7 +14,14 @@ BEGIN {
     begin = 1;
 
     if (OUTFILE == "Makefile") {
-        vars["__COND__AM_IS_TOP_BUILDDIR"] = "1";
+        vars["COND_VALUE__AM_IS_TOP_BUILDDIR"] = "1";
+        vars["_AM_IS_TOP_BUILDDIR_TRUE"] = "1";
+        vars["_AM_IS_TOP_BUILDDIR_FALSE"] = "0";
+    }
+    else {
+        vars["COND_VALUE__AM_IS_TOP_BUILDDIR"] = "0";
+        vars["_AM_IS_TOP_BUILDDIR_TRUE"] = "0";
+        vars["_AM_IS_TOP_BUILDDIR_FALSE"] = "1";
     }
 }
 
@@ -32,7 +39,7 @@ FILENAME != "-" && /^#\+\$if / {
     flip = substr (cond, 1, 1) == "!";
     gsub(/^(!)?[[:space:]]+/, "", cond);
 
-    cond = "__COND_" cond;
+    cond = "COND_VALUE_" cond;
     pair[1] = cond;
 
     if (!(cond in vars) || vars[cond] == "" || vars[cond] == "0") {
@@ -75,11 +82,7 @@ FILENAME != "-" && (cond_count == 0 || substr(cond_stack[cond_count], 1, 1) == "
     }
 
     for (name in vars) {
-        sub("@" name "@", vars[name], $0);
-
-        if (is_makefile) {
-            sub("$(" name ")", vars[name], $0);
-        }
+        gsub("@" name "@", vars[name], $0);
     }
 
     print;

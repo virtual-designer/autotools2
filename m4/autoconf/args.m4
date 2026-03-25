@@ -64,7 +64,7 @@ Optional features/capabilities:
   --disable-<FEATURE>     Disable FEATURE during build.
 AS_DIVERT(DIVERT_HELP_WITH_OPTS)
 Optional packages:
-  --with-<PACKAGE>=[ARG]  Include PACKAGE during build.
+  --with-<PACKAGE>=[[ARG]]  Include PACKAGE during build.
   --without-<PACKAGE>     Exclude PACKAGE during build.
 AS_DIVERT(DIVERT_HELP_END)
 Bug reports and suggestions should be sent to <$as_pkg_bugreport_addr>.
