@@ -15,16 +15,16 @@ clean-recursive:
 .PHONY: clean clean-am clean-recursive
 
 $(srcdir)/Makefile.in: $(srcdir)/Makefile.am
-	$(AM_V_AUTOMAKE) -n -C $(srcdir) -R $(top_srcdir)
+	$(AM_V_AUTOMAKE) -n -C $(srcdir) -R $(top_srcdir) > /dev/null
 
 $(top_srcdir)/configure: $(top_srcdir)/configure.ac
-	$(AM_V_AUTOCONF) -C $(top_srcdir)
+	$(AM_V_AUTOCONF) -C $(top_srcdir) > /dev/null
 
 $(top_builddir)/config.status: $(top_srcdir)/configure
-	$(AM_V_GEN)cd $(top_builddir) && $(SHELL) $(top_srcdir)/configure
+	$(AM_V_GEN)cd $(top_builddir) && $(CONFIG_SHELL) ./config.status --recheck
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	$(AM_V_GEN)cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/Makefile
+	$(AM_V_GEN)cd $(top_builddir) && $(CONFIG_SHELL) ./config.status $(subdir)/Makefile
 
 .PRECIOUS: Makefile
 

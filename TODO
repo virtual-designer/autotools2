@@ -1,0 +1,4 @@
+* TODO
+
+- config.cache support
+- manually customizable CLI variable args option (VAR=VALUE, AC_ARG_VAR)

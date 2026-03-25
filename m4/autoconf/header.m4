@@ -8,8 +8,11 @@ as_pkg_bugreport_addr="$3"
 as_pkg_tarname="$4"
 as_pkg_url="$5"
 
+as_cmdline_args="$[@]"
+
 AC_PREINIT
 AC_SUBST_INIT
+AC_ENV_INIT
 
 : ${PREFIX:='/usr/local'}
 : ${DESTDIR:=''}
@@ -27,6 +30,8 @@ AC_CORE_RUN_CHECKS
 ])
 
 AC_DEFUN([AC_STATUS_INIT], [
+configure_path=`as_rel_path "$as_me_full" "$top_builddir"`
+
 cat > $1 <<AS_EOF
 AS_SHEBANG
 
@@ -39,12 +44,25 @@ as_pkg_url="$6"
 as_srcdir="$as_srcdir"
 as_builddir="$as_builddir"
 
+as_configure_path="$configure_path"
+as_configure_args="$as_cmdline_args"
+ac_config_files="$ac_config_files"
+ac_config_headers="$ac_config_headers"
+ac_config_commands="$ac_config_commands"
 AS_EOF_END
 
 cat >> $1 <<'AS_EOF'
 AC_PREINIT
+AS_EOF_END
+
+cat >> $1 <<AS_EOF
+AC_STATUS_ENV_INIT
+AS_EOF_END
+
+cat >> $1 <<'AS_EOF'
 AC_CORE_PRINT_INIT
 AC_CORE_UTIL_FUNCTIONS
+AC_STATUS_ARG_INIT
 
 ac_log_printf ()
 {
@@ -238,6 +256,30 @@ as_cleanup ()
 }
 
 trap 'as_code=$?; as_cleanup; exit $as_code;' EXIT INT TERM
+])
+
+AC_DEFUN([AC_ENV_INIT], [
+[#] Basic environment variables
+
+if test -z "$CONFIG_SHELL"; then
+    if test -f /bin/sh && test -x /bin/sh; then
+        CONFIG_SHELL=/bin/sh
+    elif test -f /usr/bin/sh && test -x /usr/bin/sh; then
+        CONFIG_SHELL=/usr/bin/sh
+    else
+        CONFIG_SHELL=sh
+    fi
+fi
+
+: ${SHELL:=$CONFIG_SHELL}
+
+AC_SUBST([CONFIG_SHELL])
+AC_SUBST([SHELL])
+])
+
+AC_DEFUN([AC_STATUS_ENV_INIT], [
+CONFIG_SHELL="$CONFIG_SHELL"
+SHELL="$SHELL"
 ])
 
 AC_DEFUN([AC_CORE_UTIL_FUNCTIONS], [

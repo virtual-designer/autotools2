@@ -1,7 +1,7 @@
 dnl -*- autoconf -*-
 
 AC_DEFUN([AC_CONFIG_FILES], [
-    ac_config_files="m4_patsubst([$1], [\s+], [ ])"
+    ac_config_files="${ac_config_files} m4_patsubst([$1], [\s+], [ ])"
 ])
 
 AC_DEFUN([AC_OUTPUT], [
@@ -121,6 +121,8 @@ AS_IF([test -n "$ac_config_files_to_emit"], [
 AS_EOF_END
 
     chmod a+x "$as_builddir/config.status"
-    : ${SHELL:=sh}
-    $SHELL "$as_builddir/config.status"
+
+    AS_IF([test "$as_flag_no_create" = 0], [
+        $CONFIG_SHELL "$as_builddir/config.status"
+    ])
 ])

@@ -1,6 +1,6 @@
 # Define verbosity helpers
-am_v_1               =
-am_v_0               = @
+am_v_1                =
+am_v_0                = @
 
 am_v_echo_cc_1        =
 am_v_echo_cxx_1       =
@@ -79,8 +79,6 @@ am_v_echo_tar_x_     = $(am_v_echo_tar_x_$(_AM_DEFAULT_V))
 AM_V = $(am_v_$(V))
 AM_F = $(F)
 
-CONFIG_SHELL = /bin/sh
-SHELL = $(CONFIG_SHELL)
 MKDIR = mkdir
 MKDIR_P = $(MKDIR) -p
 CP = cp

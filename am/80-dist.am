@@ -170,7 +170,7 @@ distcheck-lz4-am:
 am_v_run_configure_distcheck_0 = echo "  RUN       $(AM_DISTCHECK_DIR)/configure" &&
 am_v_run_configure_distcheck_1 =
 am_v_run_configure_distcheck_ = $(am_v_run_configure_distcheck_$(_AM_DEFAULT_V))
-am_v_run_configure_distcheck = $(am_v_run_configure_distcheck_$(V)) $(SHELL) ./configure
+am_v_run_configure_distcheck = $(am_v_run_configure_distcheck_$(V)) $(CONFIG_SHELL) ./configure
 
 am_v_cmp_dist_distcheck_0 = echo "  CMP      $(GEN_DIST) $(AM_DISTCHECK_DIR)/$(GEN_DIST)";
 am_v_cmp_dist_distcheck_1 =
