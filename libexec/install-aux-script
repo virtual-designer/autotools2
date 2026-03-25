@@ -37,7 +37,7 @@ EOF
 }
 
 ignore_if_exists=0
-flag_D=
+create_path=0
 
 while test $# -gt 0; do
 	case "$1" in
@@ -52,7 +52,7 @@ while test $# -gt 0; do
 			;;
 
         -D|--create-path)
-            flag_D=-D
+            create_path=1
             shift
             ;;
 
@@ -115,5 +115,6 @@ if test -f "$dest/$script"; then
     exit 1
 fi
 
-install $flag_D -c -m 0755 "${script_path}" "${dest}/${script}"
+test $create_path -eq 1 && mkdir -p "${dest}"
+install -c -m 0755 "${script_path}" "${dest}"
 exit $?
