@@ -1,6 +1,50 @@
 dnl  -*- autoconf -*-
 
 dnl *****************
+dnl Linker checks
+dnl *****************
+AC_DEFUN([AC_PROG_LD], [
+    done=0
+
+    AS_FOREACH([_ld_it], [ld ld.bfd ld.gold gld lld], [
+        AS_IF([test -z "$LD" || test $done -eq 0], [
+            AS_MSG_CHECKING_CACHE_IFELSE([for ]_ld_it, [
+                AC_FIND_PROG([ld], [LD], [_ld_it], [], [], [1])
+            ])
+
+            done=1
+        ])
+    ])
+
+    AS_IF([test -z "$LD"], [
+        AC_MSG_ERROR([No linker could be found.  Please ensure the system has a linker installed.])
+    ])
+
+    AC_SUBST([LD])
+    AC_SUBST([LDFLAGS], [])
+    AC_ARG_VAR([LD], [AS_HELP_STRING([LD], [The linker.])])
+    AC_ARG_VAR([LDFLAGS], [AS_HELP_STRING([LDFLAGS], [Flags for the linker.])])
+
+    AC_REQUIRE([AC_PROG_LD_IS_GNU_LD])
+])
+
+AC_DEFUN([AC_PROG_LD_IS_GNU_LD], [
+    AS_MSG_CHECKING_CACHE_IFELSE([whether $LD is GNU ld], [
+        out=`$LD --version 2>/dev/null`
+
+        case "$out" in
+            *"GNU ld"*)
+                AC_MSG_RESULT([yes])
+                ;;
+
+            *)
+                AC_MSG_RESULT([no])
+                ;;
+        esac
+    ])
+])
+
+dnl *****************
 dnl C compiler checks
 dnl *****************
 AC_DEFUN([AC_PROG_CC_EXISTS], [
@@ -22,6 +66,8 @@ AC_DEFUN([AC_PROG_CC_EXISTS], [
 
     AC_SUBST([CC])
     AC_SUBST([CFLAGS], [])
+    AC_ARG_VAR([CC], [AS_HELP_STRING([CC], [The C compiler.])])
+    AC_ARG_VAR([CFLAGS], [AS_HELP_STRING([CFLAGS], [Flags for the C compiler.])])
 ])
 
 AC_DEFUN([AC_PROG_CC_WORKS], [
@@ -132,6 +178,7 @@ AC_DEFUN([AC_PROG_CC], [
     AC_PROG_CC_EXISTS
     AC_PROG_CC_WORKS
     AC_PROG_CC_C_O
+    AC_REQUIRE([AC_PROG_LD])
 ])
 
 
@@ -157,6 +204,8 @@ AC_DEFUN([AC_PROG_CXX_EXISTS], [
 
     AC_SUBST([CXX])
     AC_SUBST([CXXFLAGS], [])
+    AC_ARG_VAR([CXX], [AS_HELP_STRING([CXX], [The C++ compiler.])])
+    AC_ARG_VAR([CXXFLAGS], [AS_HELP_STRING([CXXFLAGS], [Flags for the C++ compiler.])])
 ])
 
 AC_DEFUN([AC_PROG_CXX_WORKS], [
@@ -275,6 +324,7 @@ AC_DEFUN([AC_PROG_CXX], [
     AC_PROG_CXX_EXISTS
     AC_PROG_CXX_WORKS
     AC_PROG_CXX_C_O
+    AC_REQUIRE([AC_PROG_LD])
 ])
 
 dnl *****************
@@ -332,4 +382,6 @@ AS_EOF_END
 
     AC_SUBST([CPP])
     AC_SUBST([CPPFLAGS], [])
+    AC_ARG_VAR([CPP], [AS_HELP_STRING([CPP], [The C preprocessor.])])
+    AC_ARG_VAR([CPPFLAGS], [AS_HELP_STRING([CPPFLAGS], [Flags for the C proprocessor.])])
 ])

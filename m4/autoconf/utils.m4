@@ -99,4 +99,13 @@ AC_DEFUN([AS_DIVERT_PUSH], [m4_pushdef([_as_divert_buf], _as_last_divert_buf)[]m
 AC_DEFUN([AS_DIVERT_POP], [m4_popdef([_as_divert_buf])[]AS_DIVERT(_as_divert_buf)])dnl
 AC_DEFUN([AS_DISCARD_START], [AS_DIVERT_PUSH([-1])])dnl
 AC_DEFUN([AS_DISCARD_END], [AS_DIVERT_POP])dnl
-AC_DEFUN([AU_ALIAS], [m4_define([$2], m4_defn([$1]))])
+AC_DEFUN([AU_ALIAS], [m4_define([$2], m4_defn([$1]))])dnl
+AC_DEFUN([AS_BREAK_STRING], [dnl
+m4_pushdef([_substr], m4_substr($1, 0, $2))[]dnl
+_substr[]dnl
+m4_ifelse(_substr, $1, [], [[
+]dnl
+AS_BREAK_STRING(m4_substr($1, $2), $2)[]dnl
+])[]dnl
+m4_popdef([_substr])[]dnl
+])

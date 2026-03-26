@@ -3,55 +3,71 @@ dnl -*- autoconf -*-
 AC_DEFUN([AS_HELP_STRING], [  $1[]dnl
 m4_ifelse(m4_eval(m4_len($1) < 20), 1, [AS_REPEAT(m4_eval(23 - m4_len($1)), [ ])], [
 []AS_REPEAT(25, [ ])])[]dnl
-$2[]dnl
+m4_patsubst($2, [
+], [
+]AS_REPEAT(25, [ ]))[]dnl
 ])
 
 AC_DEFUN([AC_ARG_INIT], [
 AS_DIVERT(DIVERT_ARGS_START)
 as_flag_no_create=0
+as_o=
 
 while test $[#] -gt 0; do
-    optname="$[1]"
+    arg="$[1]"
+    optname="$arg"
 
-    case "$optname" in
-        --)
+    case "$arg" in
+        ${as_o}--)
             shift
-            break
+            as_o=`as_rand`
+            continue
             ;;
 
-        -h|--help)
+        ${as_o}-h|${as_o}--help)
             usage
             exit 0
             ;;
 
-        -V|--version)
+        ${as_o}-V|${as_o}--version)
             show_version
             exit 0
             ;;
 
-        -n|--no-create)
+        ${as_o}-n|${as_o}--no-create)
             as_flag_no_create=1
             shift
+            continue
             ;;
 
 AS_DIVERT(DIVERT_ARGS_END)
-        --enable-*|--disable-*|--with-*|--without-*)
+        ${as_o}--enable-*|${as_o}--disable-*|${as_o}--with-*|${as_o}--without-*)
             optname_base=`printf '%s\n' "$optname" | cut -d= -f1`
             as_me_warn "Unknown option: '%s' - ignoring" "$optname_base"
             shift
+            continue
             ;;
 
-        -*)
+        ${as_o}-*)
             as_me_error "Unrecognized option: '%s'" "$optname"
             as_me_error "Try '%s --help' for more information." "$as_me_full"
             exit 1
             ;;
 
+        *=*)
+            varname=`printf '%s\n' "$arg" | cut -d= -f1`
+            as_me_warn "Unknown variable: '%s' - ignoring" "$varname"
+            shift
+            ;;
+
         *)
-            break
+            as_me_error "Unrecognized argument: '%s'" "$arg"
+            as_me_error "Try '%s --help' for more information." "$as_me_full"
+            exit 1
             ;;
     esac
 done
+
 AS_DIVERT(DIVERT_HELP_START)
 [#] Print usage
 usage ()
@@ -78,10 +94,14 @@ AS_DIVERT(DIVERT_HELP_WITH_OPTS)
 Optional packages:
   --with-<PACKAGE>=[[ARG]]  Include PACKAGE during build.
   --without-<PACKAGE>     Exclude PACKAGE during build.
+AS_DIVERT(DIVERT_HELP_VARS)
+Environment variables:
 AS_DIVERT(DIVERT_HELP_END)
 Bug reports and suggestions should be sent to <$as_pkg_bugreport_addr>.
 EOF
 }
+
+AS_DIVERT(DIVERT_ARGS_END)
 
 [#] Print version information
 show_version ()
@@ -95,37 +115,12 @@ test -n "$PACKAGE_BUGREPORT" && \
     echo "Bug reports for $PACKAGE_NAME should be sent directly to <$PACKAGE_BUGREPORT>."
 }
 
-AS_DIVERT(DIVERT_ARGS_END)
-
-for pair in "$[@]"; do
-    varname=`printf '%s' "$pair" | cut -d= -f1`
-    varval=`printf '%s' "$pair" | cut -d= -f2-`
-    varname_tr=`printf '%s' "$varname" | tr -d '[A-Za-z_][A-Za-z0-9_]+'`
-
-    if test -n "$varname_tr"; then
-        as_me_error "Invalid variable name: '%s'" "$varname"
-        exit 1
-    fi
-
-    case "$varname" in
-        ac_*|as_*|am_*)
-            as_me_error "Invalid variable name: '%s'" "$varname"
-            exit 1
-            ;;
-
-        *)
-            ;;
-    esac
-
-    eval -- "${varname}='${varval}'"
-done
-
 AS_DIVERT(DIVERT_BODY)
 ])
 
 AC_DEFUN([AC_ARG_ENABLE], [
 AS_DIVERT(DIVERT_ARGS)
-    --enable-$1|--enable-$1=*|--disable-$1|--disable-$1=*)
+    ${as_o}--enable-$1|${as_o}--enable-$1=*|${as_o}--disable-$1|${as_o}--disable-$1=*)
         seen=1
         enableval=1
 
@@ -172,7 +167,7 @@ AS_DIVERT(DIVERT_BODY)
 
 AC_DEFUN([AC_ARG_WITH], [
 AS_DIVERT(DIVERT_ARGS)
-    --with-$1|--with-$1=*|--without-$1|--without-$1=*)
+    ${as_o}--with-$1|${as_o}--with-$1=*|${as_o}--without-$1|${as_o}--without-$1=*)
         withval=""
         seen=1
 
@@ -217,6 +212,26 @@ AS_DIVERT(DIVERT_ARGS_PROC)
 AS_DIVERT(DIVERT_BODY)
 ])
 
+AC_DEFUN([AC_ARG_VAR], [
+AS_DIVERT(DIVERT_ARGS)
+    $1=*)
+        varname="$1"
+        varval=`printf '%s' "${arg}" | cut -d= -f2-`
+        shift
+        $1="${varval}"
+        $3
+        as_arg_var_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen="1"
+        ;;
+
+AS_DIVERT(DIVERT_HELP_VARS)$2[]
+AS_DIVERT(DIVERT_ARGS_PROC)
+    if test "$as_arg_var_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen" != 1; then
+        $4
+        :
+    fi
+AS_DIVERT(DIVERT_BODY)
+])
+
 AC_DEFUN([AC_STATUS_ARG_INIT], [
 usage ()
 {
@@ -230,7 +245,7 @@ Usage:
 Options:
   -h, --help              Show this help and exit.
   -V, --version           Show version information and exit.
-  -R, --recheck           Run configure again with the same options given 
+  -R, --recheck           Run configure again with the same options given
                           when this config.status was created.
 
 EOF
