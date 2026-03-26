@@ -67,9 +67,12 @@ fi
 ])
 
 AC_DEFUN([AC_MSG_ERROR], [
-ac_log_heading "Error occurred"
-ac_log_printf "error: %s" "$1"
-ac_log_printf "\n"
+if command -v ac_log_heading; then
+    ac_log_heading "Error occurred"
+    ac_log_printf "error: %s" "$1"
+    ac_log_printf "\n"
+fi
+
 as_me_println "error: %s" "$1" >&2
 exit 1
 ])
@@ -82,5 +85,9 @@ as_me_println "%s" "$1" >&2
 ])
 
 AC_DEFUN([AC_MSG_INFO], [
+as_me_println "%s" "$1"
+])
+
+AC_DEFUN([AC_MSG_NOTICE], [
 as_me_println "%s" "$1"
 ])

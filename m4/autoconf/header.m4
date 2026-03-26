@@ -14,16 +14,16 @@ AC_PREINIT
 AC_SUBST_INIT
 AC_ENV_INIT
 
-: ${PREFIX:='/usr/local'}
 : ${DESTDIR:=''}
 
-AC_SUBST([PREFIX], [$PREFIX])
 AC_SUBST([DESTDIR], [$DESTDIR])
 
 AC_CORE_PRINT_INIT
 AC_CORE_UTIL_FUNCTIONS
 AC_ARG_INIT
 AC_CORE_LOG_INIT
+
+AC_ARG_CORE_OPTS_ADD
 
 AS_DIVERT(DIVERT_BODY)
 AC_CORE_RUN_CHECKS
@@ -345,4 +345,21 @@ AC_DEFUN([AC_ENSURE_SANENESS], [
         AC_MSG_RESULT([no])
         AC_MSG_ERROR([Build environment is not sane.  Please double check if the filesystem is writable and accessible.  Ensure permissions are correct.])
     ])
+])
+
+AC_DEFUN([AC_ARG_CORE_OPTS_ADD], [
+    AC_ARG_OPT([prefix], [AS_HELP_STRING([--prefix=PREFIX], [Set system installation prefix. (default: /usr/local)])], [1], [
+        prefix="$optval"
+
+        case "$prefix" in
+            /*)
+                ;;
+
+            *)
+                AC_MSG_ERROR([Given PREFIX must be an absolute path])
+                ;;
+        esac
+    ], [prefix=/usr/local])
+
+    AC_SUBST([PREFIX], [$prefix])
 ])

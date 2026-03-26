@@ -86,6 +86,8 @@ General options:
   -h, --help              Show this help and exit.
   -v, --version           Show version information.
   -n, --no-create         Do not create output files.
+
+Other options:
 AS_DIVERT(DIVERT_HELP_ENABLE_OPTS)
 Optional features/capabilities:
   --enable-<FEATURE>      Enable FEATURE during build.
@@ -207,6 +209,55 @@ AS_DIVERT(DIVERT_HELP_WITH_OPTS)$2[]
 AS_DIVERT(DIVERT_ARGS_PROC)
     if test "$as_opt_with_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen" != 1; then
         $4
+        :
+    fi
+AS_DIVERT(DIVERT_BODY)
+])
+
+AC_DEFUN([AC_ARG_OPT], [
+AS_DIVERT(DIVERT_ARGS)
+    ${as_o}--$1)
+        optname="$1"
+        shift
+
+        m4_ifelse($3, [1], [
+            AS_IF([test -z "$[1]"], [
+                as_me_error "Option '%s' requires an argument" "$optname"
+                as_me_error "Try '%s --help' for more information." "$as_me_full"
+                exit 1
+            ])
+
+            optval="$[1]"
+            shift
+        ], [])
+
+        $4
+        as_custom_opt_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen="1"
+        ;;
+
+    ${as_o}--$1=*)
+        optname="$1"
+        shift
+
+        m4_ifelse($3, [-1], [
+            AS_IF([test -n "$[1]"], [
+                as_me_error "Option '%s' does not accept argument" "$optname"
+                as_me_error "Try '%s --help' for more information." "$as_me_full"
+                exit 1
+            ])
+
+        ], [])
+
+        optval=`as_printf '%s' "$arg" | cut -d= -f2-`
+
+        $4
+        as_custom_opt_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen="1"
+        ;;
+
+AS_DIVERT(DIVERT_HELP_START)$2[]
+AS_DIVERT(DIVERT_ARGS_PROC)
+    if test "$as_custom_opt_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen" != 1; then
+        $5
         :
     fi
 AS_DIVERT(DIVERT_BODY)
