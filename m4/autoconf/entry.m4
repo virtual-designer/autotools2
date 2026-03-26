@@ -11,6 +11,7 @@ m4_include([log.m4])dnl
 m4_include([print.m4])dnl
 m4_include([programs.m4])dnl
 m4_include([compiler.m4])dnl
+m4_include([cache.m4])
 m4_include([args.m4])
 m4_include([header.m4])
 m4_include([subst.m4])

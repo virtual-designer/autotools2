@@ -76,7 +76,6 @@ AC_DEFUN([AC_OUTPUT], [
     AC_STATUS_INIT(["$config_status"], [$as_pkg_name], [$as_pkg_version], [$as_pkg_bugreport_addr], [$as_pkg_tarname], [$as_pkg_url])
 
     cat >> "$config_status" <<AS_EOF
-ac_config_files="${ac_config_files}"
 AC_SUBST_STATUS_INIT
 AC_SUBST_STATUS_BUFFER
 AS_EOF_END

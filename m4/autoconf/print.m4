@@ -1,7 +1,5 @@
 dnl -*- autoconf -*-
 
-m4_define([_count], [0])
-
 AC_DEFUN([AC_CORE_PRINT_INIT], [
 as_printf ()
 {
@@ -33,37 +31,35 @@ as_me_error ()
 ])
 
 AC_DEFUN([AC_MSG_CHECKING], [
-m4_define([_count], m4_incr(_count))
-m4_define([_cache_name], _count)
+AC_CACHE_SET_NAME([$1])
 as_printf "checking %s... " "$1"
 ])
 
 AC_DEFUN([AC_MSG_RESULT], [
-if test -z "$as_cache_[]_cache_name"; then
-    as_printf "%s\n" "$1"
-    as_cache_[]_cache_name="$1"
-else
-    as_printf "%s (cached)\n" "$as_cache_[]_cache_name"
-fi
+    AC_CACHE_CURRENT_IFELSE([
+        as_printf "%s (cached)\n" "[$]AC_CACHE_CURRENT_VAR[]"
+    ], [
+        as_printf "%s\n" "$1"
+        AC_CACHE_VALUE_SET([$1])
+    ])
 ])
 
 AC_DEFUN([AS_MSG_CHECKING_CACHE], [
 AC_MSG_CHECKING([$1])
-m4_define([_cache_name], m4_patsubst(m4_patsubst([$1], [[-$(\)\+\#\%]+], [_]), [\s+], [_]))
-as_check_name="[]_cache_name[]"
+AC_CACHE_SET_NAME([$1])
 ])
 
+AC_DEFUN([AC_MSG_CHECKING_CACHE_IFELSE], m4_defn([AS_MSG_CHECKING_CACHE_IFELSE]))
 AC_DEFUN([AS_MSG_CHECKING_CACHE_IFELSE], [
-AC_MSG_CHECKING([$1])
-m4_define([_cache_name], m4_patsubst(m4_patsubst([$1], [[-$(\)\+\#\%]+], [_]), [\s+], [_]))
-as_check_name="[]_cache_name[]"
-if test -z "$as_cache_[]_cache_name"; then
-    :
-    $2
-else
-    :
-    m4_ifelse([$3], [], [AC_MSG_RESULT([])], [$3])
-fi
+    AC_MSG_CHECKING([$1])
+    AC_CACHE_SET_NAME([$1])
+    AC_CACHE_CURRENT_IFELSE([
+        :
+        m4_ifelse([$3], [], [AC_MSG_RESULT([])], [$3])
+    ], [
+        :
+        $2
+    ])
 ])
 
 AC_DEFUN([AC_MSG_ERROR], [
@@ -78,9 +74,12 @@ exit 1
 ])
 
 AC_DEFUN([AC_MSG_WARN], [
-ac_log_heading "Warning emitted"
-ac_log_printf "warning: %s" "$1"
-ac_log_printf "\n"
+if command -v ac_log_heading; then
+    ac_log_heading "Warning emitted"
+    ac_log_printf "warning: %s" "$1"
+    ac_log_printf "\n"
+fi
+
 as_me_println "%s" "$1" >&2
 ])
 

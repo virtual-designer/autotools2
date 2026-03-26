@@ -1,7 +1,7 @@
 dnl -*- autoconf -*-
 
 AC_DEFUN([AS_HELP_STRING], [  $1[]dnl
-m4_ifelse(m4_eval(m4_len($1) < 20), 1, [AS_REPEAT(m4_eval(23 - m4_len($1)), [ ])], [
+m4_ifelse(m4_eval(m4_len([$1]) < 20), 1, [AS_REPEAT(m4_eval(23 - m4_len([$1])), [ ])], [
 []AS_REPEAT(25, [ ])])[]dnl
 m4_patsubst($2, [
 ], [
@@ -15,57 +15,90 @@ as_o=
 
 while test $[#] -gt 0; do
     arg="$[1]"
+    orig_arg="$arg"
     optname="$arg"
+    short_opts=""
 
-    case "$arg" in
-        ${as_o}--)
-            shift
-            as_o=`as_rand`
-            continue
-            ;;
+    if test -z "${as_o}"; then
+        case "$arg" in
+            --*)
+                ;;
 
-        ${as_o}-h|${as_o}--help)
-            usage
-            exit 0
-            ;;
+            --)
+                ;;
 
-        ${as_o}-V|${as_o}--version)
-            show_version
-            exit 0
-            ;;
+            -*)
+                short_opts=`as_printf '%s\n' "$arg" | cut -c 2-`
+                ;;
+        esac
+    fi
 
-        ${as_o}-n|${as_o}--no-create)
-            as_flag_no_create=1
-            shift
-            continue
-            ;;
+    first_run=1
+    do_shift=0
+
+    while test -n "$short_opts" || test $first_run -eq 1; do
+        first_run=0
+
+        if test -n "$short_opts"; then
+            arg='-'`as_printf '%s\n' "$short_opts" | cut -c 1`
+            optname="$arg"
+            short_opts=`as_printf '%s\n' "$short_opts" | cut -c 2-`
+        fi
+
+        case "$arg" in
+            ${as_o}--)
+                shift
+                as_o=`as_rand`
+                continue
+                ;;
+
+            ${as_o}-h|${as_o}--help)
+                usage
+                exit 0
+                ;;
+
+            ${as_o}-V|${as_o}--version)
+                show_version
+                exit 0
+                ;;
+
+            ${as_o}-n|${as_o}--no-create)
+                as_flag_no_create=1
+                do_shift=1
+                continue
+                ;;
 
 AS_DIVERT(DIVERT_ARGS_END)
-        ${as_o}--enable-*|${as_o}--disable-*|${as_o}--with-*|${as_o}--without-*)
-            optname_base=`printf '%s\n' "$optname" | cut -d= -f1`
-            as_me_warn "Unknown option: '%s' - ignoring" "$optname_base"
-            shift
-            continue
-            ;;
+            ${as_o}--enable-*|${as_o}--disable-*|${as_o}--with-*|${as_o}--without-*)
+                optname_base=`printf '%s\n' "$optname" | cut -d= -f1`
+                as_me_warn "Unknown option: '%s' - ignoring" "$optname_base"
+                do_shift=1
+                continue
+                ;;
 
-        ${as_o}-*)
-            as_me_error "Unrecognized option: '%s'" "$optname"
-            as_me_error "Try '%s --help' for more information." "$as_me_full"
-            exit 1
-            ;;
+            ${as_o}-*)
+                as_me_error "Unrecognized option: '%s'" "$optname"
+                as_me_error "Try '%s --help' for more information." "$as_me_full"
+                exit 1
+                ;;
 
-        *=*)
-            varname=`printf '%s\n' "$arg" | cut -d= -f1`
-            as_me_warn "Unknown variable: '%s' - ignoring" "$varname"
-            shift
-            ;;
+            *=*)
+                varname=`printf '%s\n' "$arg" | cut -d= -f1`
+                as_me_warn "Unknown variable: '%s' - ignoring" "$varname"
+                do_shift=1
+                ;;
 
-        *)
-            as_me_error "Unrecognized argument: '%s'" "$arg"
-            as_me_error "Try '%s --help' for more information." "$as_me_full"
-            exit 1
-            ;;
-    esac
+            *)
+                as_me_error "Unrecognized argument: '%s'" "$arg"
+                as_me_error "Try '%s --help' for more information." "$as_me_full"
+                exit 1
+                ;;
+        esac
+    done
+
+    if test $do_shift -eq 1; then
+        shift
+    fi
 done
 
 AS_DIVERT(DIVERT_HELP_START)
@@ -103,8 +136,6 @@ Bug reports and suggestions should be sent to <$as_pkg_bugreport_addr>.
 EOF
 }
 
-AS_DIVERT(DIVERT_ARGS_END)
-
 [#] Print version information
 show_version ()
 {
@@ -117,6 +148,7 @@ test -n "$PACKAGE_BUGREPORT" && \
     echo "Bug reports for $PACKAGE_NAME should be sent directly to <$PACKAGE_BUGREPORT>."
 }
 
+AS_DIVERT(DIVERT_ARGS_END)
 AS_DIVERT(DIVERT_BODY)
 ])
 
@@ -216,18 +248,18 @@ AS_DIVERT(DIVERT_BODY)
 
 AC_DEFUN([AC_ARG_OPT], [
 AS_DIVERT(DIVERT_ARGS)
-    ${as_o}--$1)
-        optname="$1"
-        shift
+    m4_ifelse($1, [], [], [${as_o}--$1])[]m4_ifelse($1, [], [], [m4_ifelse($2, [], [], [|])])[]m4_ifelse($2, [], [], [${as_o}-$2])[])
+        optname="$arg"
+        do_shift=1
 
-        m4_ifelse($3, [1], [
-            AS_IF([test -z "$[1]"], [
+        m4_ifelse($4, [1], [
+            AS_IF([test -z "$[2]"], [
                 as_me_error "Option '%s' requires an argument" "$optname"
                 as_me_error "Try '%s --help' for more information." "$as_me_full"
                 exit 1
             ])
 
-            optval="$[1]"
+            optval="$[2]"
             shift
         ], [])
 
@@ -239,7 +271,7 @@ AS_DIVERT(DIVERT_ARGS)
         optname="$1"
         shift
 
-        m4_ifelse($3, [-1], [
+        m4_ifelse($4, [-1], [
             AS_IF([test -n "$[1]"], [
                 as_me_error "Option '%s' does not accept argument" "$optname"
                 as_me_error "Try '%s --help' for more information." "$as_me_full"
@@ -248,16 +280,23 @@ AS_DIVERT(DIVERT_ARGS)
 
         ], [])
 
-        optval=`as_printf '%s' "$arg" | cut -d= -f2-`
+        optval=`as_printf '%s\n' "$arg" | cut -d= -f2-`
 
-        $4
+        $5
         as_custom_opt_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen="1"
         ;;
 
-AS_DIVERT(DIVERT_HELP_START)$2[]
+    m4_ifelse($2, [], [], [${as_o}-$2=*)
+        as_me_error "Short option '-$2' cannot accept arguments in '-$2=ARG' form.  Use '-$2 [ARG]' instead."
+        as_me_error "Try '%s --help' for more information." "$as_me_full"
+        exit 1
+        ;;
+    ])
+
+AS_DIVERT(DIVERT_HELP_START)$3[]
 AS_DIVERT(DIVERT_ARGS_PROC)
     if test "$as_custom_opt_[]AS_SHELL_VAR_ESCAPE([$1])[]_seen" != 1; then
-        $5
+        $6
         :
     fi
 AS_DIVERT(DIVERT_BODY)

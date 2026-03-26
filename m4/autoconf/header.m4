@@ -9,6 +9,8 @@ as_pkg_tarname="$4"
 as_pkg_url="$5"
 
 as_cmdline_args="$[@]"
+as_configure_path="$as_me_full"
+as_configure_args="$as_cmdline_args"
 
 AC_PREINIT
 AC_SUBST_INIT
@@ -24,6 +26,7 @@ AC_ARG_INIT
 AC_CORE_LOG_INIT
 
 AC_ARG_CORE_OPTS_ADD
+AC_CACHE_INIT
 
 AS_DIVERT(DIVERT_BODY)
 AC_CORE_RUN_CHECKS
@@ -251,11 +254,11 @@ as_cleanup_cb_add ()
 as_cleanup ()
 {
     for cb in $as_cleanup_cb_list; do
-        $cb
+        $cb "$[@]"
     done
 }
 
-trap 'as_code=$?; as_cleanup; exit $as_code;' EXIT INT TERM
+trap 'as_code=$?; as_cleanup $as_code; exit $as_code;' EXIT INT TERM
 ])
 
 AC_DEFUN([AC_ENV_INIT], [
@@ -348,7 +351,7 @@ AC_DEFUN([AC_ENSURE_SANENESS], [
 ])
 
 AC_DEFUN([AC_ARG_CORE_OPTS_ADD], [
-    AC_ARG_OPT([prefix], [AS_HELP_STRING([--prefix=PREFIX], [Set system installation prefix. (default: /usr/local)])], [1], [
+    AC_ARG_OPT([prefix], [], [AS_HELP_STRING([--prefix=PREFIX], [Set system installation prefix. (default: /usr/local)])], [1], [
         prefix="$optval"
 
         case "$prefix" in
