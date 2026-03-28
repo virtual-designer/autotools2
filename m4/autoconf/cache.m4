@@ -1,8 +1,8 @@
 dnl -*- autoconf -*-
 
 AC_DEFUN([AC_CACHE_INIT], [
-    AC_ARG_OPT([cache-file], [], [AS_HELP_STRING([--cache-file=FILE], [1], [Cache configuration test results in FILE])], [ac_cache_file="${optval}"], [ac_cache_file=""])
-    AC_ARG_OPT([config-cache], [C], [AS_HELP_STRING([-C, --config-cache], [-1], [Alias for '--cache-file=config.cache'])], [ac_cache_file="config.cache"], [])
+    AC_ARG_OPT([cache-file], [], [AS_HELP_STRING([--cache-file=FILE], [Cache configuration test results in FILE])], [1] [ac_cache_file="${optval}"], [ac_cache_file=""])
+    AC_ARG_OPT([config-cache], [C], [AS_HELP_STRING([-C, --config-cache], [Alias for '--cache-file=config.cache'])], [-1], [ac_cache_file="config.cache"], [])
 
 ac_cache_cleanup ()
 {
