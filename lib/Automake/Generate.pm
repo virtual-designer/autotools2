@@ -54,6 +54,7 @@ sub gen_template
         am_options => "dist-gz",
         var_index => 0,
         dist_targets => "",
+        target_info => {},
     );
 
     for (my $i = 0; $i < MAX_BUF_COUNT; $i++) {
@@ -143,6 +144,24 @@ sub gen_template
     return ($warnings, $errors, $next_dirs, true, "");
 }
 
+sub create_default_target_info
+{
+    return {
+        is_isolated => false,
+    };
+}
+
+sub set_target_info
+{
+    my ($context, $id, $key, $value) = @_;
+
+    if (!exists $context->{target_info}->{$id}) {
+        $context->{target_info}->{$id} = create_default_target_info ();
+    }
+
+    $context->{target_info}->{$id}->{$key} = $value;
+}
+
 sub process_line
 {
     my ($ln_num, $line, $input_am, $last3lines, $context) = @_;
@@ -221,8 +240,19 @@ sub process_line
         }
 
         $context->{program_vars}->{$1} = (exists $context->{program_vars}->{$1} ? $context->{program_vars}->{$1} : "") . $2;
-    }
 
+        foreach my $name (split (/\s+/, $2)) {
+            $name =~ s/[\.-\/]/_/g;
+
+            if (exists $context->{target_info}->{$name}) {
+                next;
+            }
+
+            $context->{target_info}->{$name} = {
+                is_isolated => false,
+            };
+        }
+    }
     elsif ($line =~ /^([a-z0-9]+)_LIBRARIES[ \t]*=[ \t]*(.*)$/) {
         my $dirs = $context->{sysdirs};
 
@@ -232,6 +262,21 @@ sub process_line
         }
 
         $context->{lib_vars}->{$1} = (exists $context->{lib_vars}->{$1} ? $context->{lib_vars}->{$1} : "") . $2;
+
+        foreach my $name (split (/\s+/, $2)) {
+            $name =~ s/[\.-\/]/_/g;
+
+            if (exists $context->{target_info}->{$name}) {
+                next;
+            }
+
+            $context->{target_info}->{$name} = {
+                is_isolated => false,
+            };
+        }
+    }
+    elsif ($line =~ /^([a-zA-Z0-9-_]+)_(CFLAGS|CPPFLAGS)[ \t]*=[ \t]*(.*)$/) {
+        set_target_info ($context, $1, "is_isolated", true);
     }
     elsif ($line =~ /^([a-zA-Z0-9-_]+)_SOURCES[ \t]*=[ \t]*(.*)$/) {
         my $program = $1;
@@ -359,7 +404,7 @@ sub finalize
 
         @{$buffers}[BUF_USER] .= "${name_raw}--am-clean: clean-${name}\n";
         @{$buffers}[BUF_USER] .= "clean-${name}:\n";
-        @{$buffers}[BUF_USER] .= "\t\$(AM_V_RM_E_${name}) ${name_raw} \$(${name}_OBJECTS) && \$(RM) -r ${name}.dSYM\n\n";
+        @{$buffers}[BUF_USER] .= "\t\$(AM_V_RM_E_${name}) ${name_raw} \$(${name}_OBJECTS_FINAL) && \$(RM) -r ${name}.dSYM\n\n";
     }
 
     foreach my $program_var (keys %{%$context{program_vars}}) {
@@ -376,8 +421,22 @@ sub finalize
             @{$buffers}[BUF_VARS] .= "${program}_LINK = \$(${program}_LD) \$(AM_LDFLAGS) \$(LDFLAGS) \$(${program}_LDFLAGS)\n";
 
             @{$buffers}[BUF_USER] .= "${program_raw}--am-all: ${program_raw}\n";
-            @{$buffers}[BUF_USER] .= "${program_raw}: \$(${program}_OBJECTS)\n";
-            @{$buffers}[BUF_USER] .= "\t\$(${program}_LINK)  -o \$@ \$(${program}_OBJECTS) \$(${program}_LDADD) \$(LDADD) \$(LDLIBS) \$(LIBS)\n\n";
+
+            if (exists $context->{target_info}->{$program} && $context->{target_info}->{$program}->{is_isolated}) {
+                my $program_suffix = $program_raw;
+                $program_suffix =~ s/\.[A-Za-z0-9]+$//g;
+
+                @{$buffers}[BUF_USER] .= "${program}_OBJECTS_FINAL = \$(${program}_OBJECTS:.o=.${program_suffix}.o)\n\n";
+                @{$buffers}[BUF_USER] .= ".c.${program_suffix}.o:\n";
+                @{$buffers}[BUF_USER] .= "\t\$(AM_V_CC) \$(AM_CPPFLAGS) \$(CPPFLAGS) \$(${program}_CPPFLAGS) \$(AM_CFLAGS) \$(CFLAGS) \$(${program}_CFLAGS) -c \$< -o \$\@\n";
+                @{$buffers}[BUF_USER] .= ".SUFFIXES: .${program_suffix}.o\n";
+            }
+            else {
+                @{$buffers}[BUF_USER] .= "${program}_OBJECTS_FINAL = \$(${program}_OBJECTS)\n";
+            }
+
+            @{$buffers}[BUF_USER] .= "${program_raw}: \$(${program}_OBJECTS_FINAL)\n";
+            @{$buffers}[BUF_USER] .= "\t\$(${program}_LINK) -o \$@ \$(${program}_OBJECTS_FINAL) \$(${program}_LDADD) \$(LDADD) \$(LDLIBS) \$(LIBS)\n\n";
 
             @{$buffers}[BUF_USER] .= "${program_raw}--am-install: \$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}\n";
             @{$buffers}[BUF_USER] .= "${program_raw}--am-uninstall: \$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}--am-uninstall\n";
@@ -414,8 +473,21 @@ sub finalize
             $lib =~ s/[\.-\/]/_/g;
 
             @{$buffers}[BUF_USER] .= "${lib_raw}--am-all: ${lib_raw}\n";
-            @{$buffers}[BUF_USER] .= "${lib_raw}: \$(${lib}_OBJECTS)\n";
-            @{$buffers}[BUF_USER] .= "\t\$(AM_V_AR) \$(AM_ARFLAGS) \$(ARFLAGS) \$(${lib}_ARFLAGS) rcs \$@ \$(${lib}_OBJECTS) \$(${lib}_LIBADD) \$(LIBADD) \$(LIBS)\n\n";
+
+            if (exists $context->{target_info}->{$lib} && $context->{target_info}->{$lib}->{is_isolated}) {
+                my $lib_suffix = $lib_raw;
+                $lib_suffix =~ s/\.[A-Za-z0-9]+$//g;
+                @{$buffers}[BUF_USER] .= "${lib}_OBJECTS_FINAL = \$(${lib}_OBJECTS:.o=.${lib_suffix}.o)\n";
+                @{$buffers}[BUF_USER] .= ".c.${lib_suffix}.o:\n";
+                @{$buffers}[BUF_USER] .= "\t\$(AM_V_CC) \$(AM_CPPFLAGS) \$(CPPFLAGS) \$(${lib}_CPPFLAGS) \$(AM_CFLAGS) \$(CFLAGS) \$(${lib}_CFLAGS) -c \$< -o \$\@\n";
+                @{$buffers}[BUF_USER] .= ".SUFFIXES: .${lib_suffix}.o\n";
+            }
+            else {
+                @{$buffers}[BUF_USER] .= "${lib}_OBJECTS_FINAL = \$(${lib}_OBJECTS)\n";
+            }
+
+            @{$buffers}[BUF_USER] .= "${lib_raw}: \$(${lib}_OBJECTS_FINAL)\n";
+            @{$buffers}[BUF_USER] .= "\t\$(AM_V_AR) \$(AM_ARFLAGS) \$(ARFLAGS) \$(${lib}_ARFLAGS) rcs \$@ \$(${lib}_OBJECTS_FINAL) \$(${lib}_LIBADD) \$(LIBADD) \$(LIBS)\n\n";
 
             @{$buffers}[BUF_USER] .= "${lib_raw}--am-install: \$(AM_DESTDIR)\$(${lib_var}dir)/${lib_raw}\n";
             @{$buffers}[BUF_USER] .= "${lib_raw}--am-uninstall: \$(AM_DESTDIR)\$(${lib_var}dir)/${lib_raw}--am-uninstall\n";
