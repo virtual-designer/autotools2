@@ -435,7 +435,7 @@ sub finalize
                 @{$buffers}[BUF_USER] .= "${program}_OBJECTS_FINAL = \$(${program}_OBJECTS)\n";
             }
 
-            @{$buffers}[BUF_USER] .= "${program_raw}: \$(${program}_OBJECTS_FINAL)\n";
+            @{$buffers}[BUF_USER] .= "${program_raw}: \$(${program}_OBJECTS_FINAL) \$(${program}_LDADD) \$(LDADD)\n";
             @{$buffers}[BUF_USER] .= "\t\$(${program}_LINK) -o \$@ \$(${program}_OBJECTS_FINAL) \$(${program}_LDADD) \$(LDADD) \$(LDLIBS) \$(LIBS)\n\n";
 
             @{$buffers}[BUF_USER] .= "${program_raw}--am-install: \$(AM_DESTDIR)\$(${program_var}dir)/${program_raw}\n";
@@ -486,7 +486,7 @@ sub finalize
                 @{$buffers}[BUF_USER] .= "${lib}_OBJECTS_FINAL = \$(${lib}_OBJECTS)\n";
             }
 
-            @{$buffers}[BUF_USER] .= "${lib_raw}: \$(${lib}_OBJECTS_FINAL)\n";
+            @{$buffers}[BUF_USER] .= "${lib_raw}: \$(${lib}_OBJECTS_FINAL \$(${lib}_LIBADD) \$(LIBADD))\n";
             @{$buffers}[BUF_USER] .= "\t\$(AM_V_AR) \$(AM_ARFLAGS) \$(ARFLAGS) \$(${lib}_ARFLAGS) rcs \$@ \$(${lib}_OBJECTS_FINAL) \$(${lib}_LIBADD) \$(LIBADD) \$(LIBS)\n\n";
 
             @{$buffers}[BUF_USER] .= "${lib_raw}--am-install: \$(AM_DESTDIR)\$(${lib_var}dir)/${lib_raw}\n";

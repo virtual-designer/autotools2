@@ -2,22 +2,22 @@
 #
 # Configuration file for the build-aux/update-license-comments script.
 #
-# This file is part of OSN freehttpd.
+# This file is part of Autotools2.
 #
 # Copyright (C) 2025-2026  OSN Developers.
 #
-# OSN freehttpd is free software: you can redistribute it and/or modify
+# Autotools2 is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 # 
-# OSN freehttpd is distributed in the hope that it will be useful,
+# Autotools2 is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
 # 
 # You should have received a copy of the GNU Affero General Public License
-# along with OSN freehttpd.  If not, see <https://www.gnu.org/licenses/>.
+# along with Autotools2.  If not, see <https://www.gnu.org/licenses/>.
 
 # shellcheck disable=2034
 
@@ -57,22 +57,22 @@ noticerc_get_comment ()
         *.c|*.h)
             cat <<EOF
 /*
- * This file is part of OSN freehttpd.
+ * This file is part of Autotools2.
  * 
  * Copyright (C) 2025-$YEAR  OSN Developers.
  *
- * OSN freehttpd is free software: you can redistribute it and/or modify
+ * Autotools2 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * 
- * OSN freehttpd is distributed in the hope that it will be useful,
+ * Autotools2 is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
  * 
  * You should have received a copy of the GNU Affero General Public License
- * along with OSN freehttpd.  If not, see <https://www.gnu.org/licenses/>.
+ * along with Autotools2.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 
